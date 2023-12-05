@@ -7,7 +7,7 @@ public class Cuoco
     public static void main(String [] args)
     {
         final int PORT = 1314;              //number of the port used to communicate with waiters
-        Menu menu = Menu.getMenuObject();   //restaurant's menu
+        Menu menu = new Menu();             //restaurant's menu
         Socket accepted;                    //specifies which waiter is communicating with the chef
         ObjectOutputStream menuWriter;      //used to send the menù to the waiters
         BufferedReader orderReader;         //used to receive request of preparing an order by waiters
@@ -29,7 +29,7 @@ public class Cuoco
             //sends the menù to the waiter
             System.out.println("(Cuoco) Fornisco il menù ai camerieri");
             menuWriter = new ObjectOutputStream(accepted.getOutputStream());
-            menuWriter.writeObject(Menu.getMenuObject());
+            menuWriter.writeObject(menu);
 
             //keeps cooking clients' orders and sending them to waiters
             while (true)
@@ -59,14 +59,14 @@ public class Cuoco
     public static void writeMenu()
     {
         //name of the file that contains the menu
-        String fileName = "src/menu.txt";
+        String fileName = "menu.txt";
 
         //tries to open the file in read mode
         try (FileWriter fileWriter = new FileWriter(fileName))
         {
             //reads each menu order and prints them on the screen
             BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
-            bufferedWriter.write("Pasta al sugo");
+            bufferedWriter.write("Pasta al pomodoro");
             bufferedWriter.newLine();
 
             //close the connection to the file

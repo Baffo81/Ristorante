@@ -5,22 +5,14 @@ import java.util.ArrayList;
 
 public class Menu implements Serializable
 {
-    private static Menu menuObject;
     protected ArrayList<String> menu = new ArrayList<>();
 
-    private Menu() {}
-
-    public static Menu getMenuObject()
-    {
-        if(menuObject == null)
-            menuObject = new Menu();
-        return menuObject;
-    }
+    public Menu() {}
 
     public ArrayList<String> getMenu()
     {
         //name of the file that contains the menu
-        String fileName = "src/menu.txt";
+        String fileName = "menu.txt";
 
         //tries to open the file in read mode
         try (FileReader fileReader = new FileReader(fileName))
