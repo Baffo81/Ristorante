@@ -2,7 +2,6 @@ import java.io.*;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.Random;
 
 public class Cameriere
@@ -61,7 +60,13 @@ public class Cameriere
 
                         //the waiter sends menu to the client
                         System.out.println("(Cameriere) Fornisco il menù al cliente");
-                        writerToClient.println(menu);
+                       try(ObjectOutputStream menuWriter = new ObjectOutputStream(acceptedClient.getOutputStream())) {
+                           menuWriter.writeObject(menu);
+                       }
+                       catch (IOException e)
+                       {
+                           e.printStackTrace();
+                       }
 
                         //the client exits the restaurant and its seats are now free
                         acceptedClient.close();

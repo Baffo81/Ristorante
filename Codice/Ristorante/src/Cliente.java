@@ -1,7 +1,4 @@
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.Random;
@@ -13,7 +10,7 @@ public class Cliente
         final int PORT         = 1313;               //port's number used for the connection to the waiter
         int     requiredSeats  = randomNumber();     //number of required seats
         boolean answer;                              //true if there are available seats and false otherwise
-        String menu;
+        Menu menu;
 
         try
         {
@@ -37,8 +34,16 @@ public class Cliente
                 if (answer)
                 {
                     System.out.println("(Cliente) Prendo posto e richiedo il menù");
-                    menu = reader.readLine();
-                    System.out.println("(Cliente) Il menù è " + menu);
+
+                    try(ObjectInputStream readerObject = new ObjectInputStream(socket.getInputStream())){
+                        menu = (Menu) readerObject.readObject();
+                        System.out.println("(Cliente) Il menù è " );
+                        menu.showMenu();
+                    }
+                    catch(IOException | ClassNotFoundException e)
+                    {
+                        e.printStackTrace();
+                    }
                 }
                 else
                 {

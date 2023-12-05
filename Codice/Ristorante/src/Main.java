@@ -4,7 +4,8 @@ public class Main
 {
     public static void main(String [] args)
     {
-        ArrayList<String> menu = Menu.getMenuObject().getMenu();
+        Menu menuObject = new Menu();
+        ArrayList<String> menu = menuObject.getMenu();
         showMenu(menu);
     }
 
