@@ -5,7 +5,7 @@ import java.util.Scanner;
 
 public class Cuoco
 {
-    public static void main(String [] args)
+    public static void main(String[] args)
     {
         final int PORT = 1314;              //number of the port used to communicate with waiters
         Socket accepted;                    //specifies which waiter is communicating with the chef
@@ -18,7 +18,7 @@ public class Cuoco
         writeMenu();
 
         //creates a server socket with the specified port to communicate with waiters
-        try(ServerSocket serverSocket = new ServerSocket(PORT))
+        try (ServerSocket serverSocket = new ServerSocket(PORT))
         {
             //keeps cooking clients' orders and sending them to waiters
             while (true)
@@ -41,7 +41,6 @@ public class Cuoco
         catch (IOException exc)
         {
             System.out.println("(Server) Errore creazione socket o impossibile connettersi al cameriere");
-            exc.printStackTrace();
         }
     }
 
@@ -51,7 +50,7 @@ public class Cuoco
         try (FileWriter fileWriter = new FileWriter("menu.txt"))
         {
             String order,                               //order's name
-                   status;                              //"S" if the chef wants to add another order into the menu and "N" otherwise
+                    status;                              //"S" if the chef wants to add another order into the menu and "N" otherwise
             float price;                                //order's price
             Scanner scanner = new Scanner(System.in);   //object ro read from the stdin
 
@@ -90,14 +89,10 @@ public class Cuoco
                 scanner.nextLine();
             }
             while (status.equalsIgnoreCase("s"));
-
-            //close the connection to the file
-            bufferedWriter.close();
         }
-        catch (Exception exc)
+        catch (IOException exc)
         {
-            System.out.println("Errore connessione al file");
-            exc.printStackTrace();
+            System.out.println("(Cuoco) Impossibile connettersi al file");
         }
     }
 }

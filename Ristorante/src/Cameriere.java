@@ -57,14 +57,12 @@ public class Cameriere extends Thread
                 catch (IOException exc)
                 {
                     System.out.println("(Server) Errore creazione socket o impossibile connettersi al cliente");
-                    exc.printStackTrace();
                 }
             }
         }
         catch (IOException exc)
         {
             System.out.println("(Server) Errore durante la comunicazione con lo chef");
-            exc.printStackTrace();
         }
     }
 }

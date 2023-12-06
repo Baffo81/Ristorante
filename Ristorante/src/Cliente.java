@@ -57,7 +57,6 @@ public class Cliente
         catch (IOException exc)
         {
             System.out.println("(Client) Errore creazione socket o impossibile connettersi al server");
-            exc.printStackTrace();
         }
     }
 
@@ -126,7 +125,6 @@ public class Cliente
         catch (Exception exc)
         {
             System.out.println("Errore connessione al file");
-            exc.printStackTrace();
             return false;
         }
     }
@@ -151,7 +149,6 @@ public class Cliente
         catch (Exception exc)
         {
             System.out.println("Errore connessione al file");
-            exc.printStackTrace();
         }
 
         System.out.println("Questo è il menù");
