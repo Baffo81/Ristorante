@@ -1,25 +1,25 @@
 import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.Scanner;
 
 public class Cliente
 {
     public static void main(String [] args)
     {
-        final int PORT = 1313;              //port's number used for the connection to the waiter
+        final int PORT_TO_RECEPTION = 1313; //port's number used for the connection to the reception
+        final int PORT_TO_WAITER    = 1315; //port's number used for the connection to waiters
         int requiredSeats;                  //number of required seats
         Object lock = new Object();         //used to check that just one customer a time requires seats
         boolean answer;                     //true if there are available seats and false otherwise
         String order;                       //requested order by the customer
 
         //tries to create a socket with specified server's address and port's number to communicate with the waiter
-        try (Socket socket = new Socket(InetAddress.getLocalHost(), PORT))
+        try (Socket receptionSocket = new Socket(InetAddress.getLocalHost(), PORT_TO_RECEPTION))
         {
             //objects for reading and writing through the socket
-            BufferedReader checkSeats = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
+            BufferedReader checkSeats = new BufferedReader(new InputStreamReader(receptionSocket.getInputStream()));
+            PrintWriter seatsWriter = new PrintWriter(receptionSocket.getOutputStream(), true);
 
             //says how many seats he needs
             requiredSeats = getRequiredSeats();
@@ -29,8 +29,9 @@ public class Cliente
             synchronized (lock)
             {
                 //gets waiter response
-                writer.println(requiredSeats);
+                seatsWriter.println(requiredSeats);
                 answer = Boolean.parseBoolean(checkSeats.readLine());
+                receptionSocket.close();
             }
 
             //if there are available seats, the customer takes them
@@ -42,9 +43,20 @@ public class Cliente
                 //keeps ordering and eating
                 while (true)
                 {
-                    System.out.println("(Cliente) Effettuo un'ordinazione");
-                    order = getOrder();
-                    writer.println(order);
+                    try(Socket waiterSocket = new Socket(InetAddress.getLocalHost(), PORT_TO_WAITER))
+                    {
+                        //objects for reading and writing through the socket
+                        BufferedReader orderReader = new BufferedReader(new InputStreamReader(waiterSocket.getInputStream()));
+                        PrintWriter orderWriter = new PrintWriter(waiterSocket.getOutputStream(), true);
+
+                        //orders, wait for the order and eats it
+                        System.out.println("(Cliente) Effettuo un'ordinazione");
+                        order = getOrder();
+                        System.out.println("(Cliente) Ordino " + order);
+                        orderWriter.println(order);
+                        order = orderReader.readLine();
+                        System.out.println("(Cliente) Mangio " + order);
+                    }
                 }
             }
 
@@ -66,14 +78,8 @@ public class Cliente
         //scanner object to read the input
         Scanner scanner = new Scanner(System.in);
 
-        //checks if the customer enters an integer
-        while (!scanner.hasNextInt())
-        {
-            System.out.println("Benvenuto, di quanti posti hai bisogno?");
-            scanner.next();
-        }
-
-        //gets customer's input, close the scanner and returns the input
+        //reads customer requested seats
+        System.out.println("Benvenuto, di quanti posti hai bisogno?");
         int x = scanner.nextInt();
         scanner.close();
         return x;
@@ -97,7 +103,7 @@ public class Cliente
         //checks if customer's requested order is in the menù
         while (!checkOrder(order))
         {
-            System.out.println("L'ordine non è disponibile, ne scelga un altro");
+            System.out.println("Ordine non disponibile, scegline un altro");
             order = scanner.nextLine();
         }
 
@@ -110,7 +116,7 @@ public class Cliente
     public static boolean checkOrder(String order)
     {
         //tries to open the file in read mode
-        try (FileReader fileReader = new FileReader("src/menu.txt"))
+        try (FileReader fileReader = new FileReader("menu.txt"))
         {
             BufferedReader bufferedReader = new BufferedReader(fileReader);
             String menuOrder;
@@ -132,27 +138,27 @@ public class Cliente
     //simulates menu's scanning by the customer and shows it
     public static void getMenu()
     {
-        ArrayList<String> menu = new ArrayList<>();
-
         //tries to open the file in read mode
         try (FileReader fileReader = new FileReader("menu.txt"))
         {
             //reads each menu order and prints them on the screen
             BufferedReader bufferedReader = new BufferedReader(fileReader);
-            String menuOrder;
-            while ((menuOrder = bufferedReader.readLine()) != null)
-                menu.add(menuOrder);
+            String order;
+            float price;
+            System.out.println("Questo è il menù:");
+            while ((order = bufferedReader.readLine()) != null)
+            {
+                price = Float.parseFloat(bufferedReader.readLine().trim());
+                System.out.println("Ordine: " + order);
+                System.out.println("Prezzo: " + price);
+            }
 
             //close the connection to the file
             bufferedReader.close();
         }
         catch (Exception exc)
         {
-            System.out.println("Errore connessione al file");
+            System.out.println("Errore scannerizzazione menù");
         }
-
-        System.out.println("Questo è il menù");
-        for (String s : menu)
-            System.out.println(s);
     }
 }

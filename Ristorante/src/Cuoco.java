@@ -49,39 +49,34 @@ public class Cuoco
         //tries to open the file in read mode
         try (FileWriter fileWriter = new FileWriter("menu.txt"))
         {
-            String order,                               //order's name
-                    status;                              //"S" if the chef wants to add another order into the menu and "N" otherwise
-            float price;                                //order's price
-            Scanner scanner = new Scanner(System.in);   //object ro read from the stdin
+            String order,                                       //order's name
+                   status;                                      //"S" if the chef wants to add another order into the menu and "N" otherwise
+            float price;                                        //order's price
+            Scanner scanner = new Scanner(System.in);           //object to read from the stdin
+            PrintWriter writer = new PrintWriter(fileWriter);   //object to write into the file
 
-            BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);
-
+            //the chef writes the menu
             do
             {
                 //reads order's name
-                System.out.println("Quale ordine desideri aggiungere al menù?");
-                order = scanner.nextLine();
-                while (order.length() < 5)
+                do
                 {
-                    System.out.println("Ordine non valido, riprova");
+                    System.out.println("Quale ordine desideri scrivere nel menù?");
                     order = scanner.nextLine();
                 }
+                while(order.isEmpty());
 
                 //reads order's price
-                System.out.println("Qual è il prezzo dell'ordine?");
-                price = Float.parseFloat(scanner.next());
-                while (price < 0.50f)
+                do
                 {
-                    System.out.println("Prezzo non valido, riprova");
-                    price = scanner.nextFloat();
+                    System.out.println("Inserisci il prezzo dell'ordine");
+                    price = Float.parseFloat(scanner.next());
                 }
+                while (price < 0.50f);
 
                 //writes order's name and order's price into the file separated by a line
-                bufferedWriter.write(order);
-                bufferedWriter.newLine();
-                bufferedWriter.write(String.valueOf(price));
-                bufferedWriter.newLine();
-                bufferedWriter.newLine();
+                writer.println(order);
+                writer.println(price);
 
                 //checks if the chef wants to add another order into the menù
                 System.out.println("Desideri inserire un altro ordine nel menù? (S/N)");
