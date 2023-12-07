@@ -8,9 +8,9 @@ import java.util.Random;
 import java.util.concurrent.Semaphore;
 
 public class Receptionist {
+    final static int PORT = 1313;                                       // used for the communication with customers
+    final  static  Semaphore availableSeats = new Semaphore(100); // number of available seats for customers
     public static void main(String[] args) {
-        final int PORT = 1313;                                       // used for the communication with customers
-        final Semaphore availableSeats = new Semaphore(100); // number of available seats for customers
 
         // creates a socket to communicate with customers
         try (ServerSocket receptionSocket = new ServerSocket(PORT)) {

@@ -5,16 +5,17 @@ import java.util.Random;
 import java.util.Scanner;
 import java.util.concurrent.*;
 
-public class Cliente {
+public class Customer {
     private final Scanner scanner;
 
-    public Cliente(Scanner scanner) {
+    public Customer(Scanner scanner) {
         this.scanner = scanner;
     }
+    final int PORT_TO_RECEPTION = 1313; // port's number used for the connection to the reception
+    final int PORT_TO_EMPLOYEE = 1314; // used for the connection to employee
+    final int PORT_TO_WAITER = 1316; // port's number used for the connection to waiters
 
-    public void run() {
-        final int PORT_TO_RECEPTION = 1313; // port's number used for the connection to the reception
-        final int PORT_TO_WAITER = 1315; // port's number used for the connection to waiters
+    public void Comunicate() {
         int requiredSeats, // number of required seats
                 waitingTime; // number of waitingTime
         boolean answer; // true if there are available seats and false otherwise
@@ -43,21 +44,19 @@ public class Cliente {
                 System.out.println("(Cliente) Prendo posto al tavolo " + TABLENUMBER + " e scannerizzo il menù");
 
                 // keeps ordering and eating
-                while (true) {
-                    try (Socket waiterSocket = new Socket(InetAddress.getLocalHost(), PORT_TO_WAITER)) {
+                    try (Socket waiterSocket = new Socket(InetAddress.getLocalHost(), PORT_TO_EMPLOYEE)) {
                         // objects for reading and writing through the socket
                         BufferedReader orderReader = new BufferedReader(new InputStreamReader(waiterSocket.getInputStream()));
                         PrintWriter orderWriter = new PrintWriter(waiterSocket.getOutputStream(), true);
-
                         // orders, wait for the order and eats it
                         System.out.println("(Cliente) Effettuo un'ordinazione");
                         order = getOrder();
-                        System.out.println("(Cliente) Ordino " + order + " al tavolo" + TABLENUMBER);
-                        orderWriter.println(order + "- Tavolo" + TABLENUMBER);
-                        order = orderReader.readLine();
-                        System.out.println("(Cliente) Mangio " + order);
+                        System.out.println("(Cliente) Ordino " + order + " al tavolo " + TABLENUMBER);
+                        orderWriter.println(order + " - Tavolo " + TABLENUMBER);
+
+                        /*order = orderReader.readLine();
+                        System.out.println("(Cliente) Mangio " + order);*/
                     }
-                }
             }
 
             // otherwise, he goes away
@@ -88,7 +87,7 @@ public class Cliente {
                         }
                         catch (InterruptedException | ExecutionException e)
                         {
-                            e.printStackTrace();
+                            throw new RuntimeException(e);
                         } finally {
                             scheduler.shutdown(); // rilascio le risorse
                         }
@@ -105,7 +104,7 @@ public class Cliente {
 
     private void onWaitComplete() {
         System.out.println("(Cliente) Attesa completata. Riprovo a prendere posto.");
-        run(); // Riesegue il metodo run per riprovare a prendere posto
+        Comunicate(); // Riesegue il metodo run per riprovare a prendere posto
     }
 
     // allows customer to say how many seats he needs
@@ -124,12 +123,13 @@ public class Cliente {
 
         // gets customer's order
         System.out.println("Scegli un ordine da effettuare");
+        scanner.nextLine(); // Consuma il resto della linea, inclusa la nuova riga
         order = scanner.nextLine(); // consume newline character
 
         // checks if customer's requested order is in the menù
         while (!checkOrder(order)) {
             System.out.println("Ordine non disponibile, scegline un altro");
-            order = scanner.nextLine();
+            order = scanner.next();
         }
 
         return order;
@@ -184,8 +184,8 @@ public class Cliente {
 
     public static void main(String[] args) {
         try (Scanner scanner = new Scanner(System.in)) {
-            Cliente client = new Cliente(scanner);
-            client.run();
+            Customer client = new Customer(scanner);
+            client.Comunicate();
         }
     }
 }
