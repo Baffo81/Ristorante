@@ -65,7 +65,7 @@ public class Cliente {
                 try (Socket receptionSocket2 = new Socket(InetAddress.getLocalHost(), PORT_TO_RECEPTION)) {
                     // objects for reading and writing through the socket
                     BufferedReader checkSeats2 = new BufferedReader(new InputStreamReader(receptionSocket2.getInputStream()));
-
+                    PrintWriter leaveWriter = new PrintWriter(receptionSocket2.getOutputStream(), true);
 
                     // Decide se vuoi aspettare o meno
                     waitingTime = Integer.parseInt(checkSeats2.readLine());
@@ -88,7 +88,7 @@ public class Cliente {
                         }
                         catch (InterruptedException | ExecutionException e)
                         {
-                            throw new RuntimeException(e);
+                            e.printStackTrace();
                         } finally {
                             scheduler.shutdown(); // rilascio le risorse
                         }

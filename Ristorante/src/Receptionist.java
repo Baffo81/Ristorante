@@ -9,9 +9,10 @@ import java.util.concurrent.Semaphore;
 
 public class Receptionist {
     public static void main(String[] args) {
-        final int PORT = 1313; // number of the port on which communicates with customers
+        final int PORT = 1313;                                       // used for the communication with customers
         final Semaphore availableSeats = new Semaphore(100); // number of available seats for customers
 
+        // creates a socket to communicate with customers
         try (ServerSocket receptionSocket = new ServerSocket(PORT)) {
             while (true) {
                 System.out.println("(Reception) In attesa di prenotazioni da clienti");
@@ -22,29 +23,30 @@ public class Receptionist {
 
                 int requiredSeats = Integer.parseInt(reader.readLine());
 
-                if (availableSeats.tryAcquire(requiredSeats))
-                {
+                if (availableSeats.tryAcquire(requiredSeats)) {
                     System.out.println("(Reception) Il cliente prende posto");
                     writer.println(true);
                     System.out.println("(Reception) Numero dei posti disponibili:" + availableSeats.availablePermits());
                     availableSeats.release(requiredSeats);
                 }
-                else
-                {
+                else {
                     System.out.println("(Reception) Non ci sono abbastanza posti");
                     writer.println(false);
-                    // Creare una seconda connessione per comunicare il tempo di attesa
+
+                    // creare una seconda connessione per comunicare il tempo di attesa
                     try (Socket waitingTimeSocket = receptionSocket.accept()) {
                         PrintWriter waitingTimeWriter = new PrintWriter(waitingTimeSocket.getOutputStream(), true);
                         int waitingTime = RandomWaitingTime();
                         System.out.println("(Reception) Il tempo finché un tavolo si liberi è " + waitingTime + " minuti");
                         waitingTimeWriter.println(waitingTime);
-                    } catch (IOException e) {
+                    }
+                    catch (IOException e) {
                         throw new RuntimeException(e);
                     }
                 }
-                }
-            } catch (IOException e) {
+            }
+        }
+        catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
