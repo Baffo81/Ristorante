@@ -23,31 +23,30 @@ public class Receptionist {
 
                 int requiredSeats = Integer.parseInt(reader.readLine());
 
-                if (availableSeats.tryAcquire(requiredSeats)) {
+                if (availableSeats.tryAcquire(requiredSeats))
+                {
                     System.out.println("(Reception) Il cliente prende posto");
                     writer.println(true);
                     System.out.println("(Reception) Numero dei posti disponibili:" + availableSeats.availablePermits());
                     availableSeats.release(requiredSeats);
-                } else {
+                }
+                else
+                {
                     System.out.println("(Reception) Non ci sono abbastanza posti");
                     writer.println(false);
-                    bybye = Boolean.parseBoolean(reader.readLine());
-                    if (bybye) {
-                        System.out.println("(Reception) Il cliente se ne andato");
-                        acceptedClient.close(); // Chiudi la connessione con il cliente
-                    } else {
-                        // Creare una seconda connessione per comunicare il tempo di attesa
-                        try (Socket waitingTimeSocket = receptionSocket.accept()) {
-                            PrintWriter waitingTimeWriter = new PrintWriter(waitingTimeSocket.getOutputStream(), true);
-                            int waitingTime = RandomWaitingTime();
-                            System.out.println("(Reception) Il tempo finché un tavolo si liberi è " + waitingTime + " minuti");
-                            waitingTimeWriter.println(waitingTime);
-                        }
+                    // Creare una seconda connessione per comunicare il tempo di attesa
+                    try (Socket waitingTimeSocket = receptionSocket.accept()) {
+                        PrintWriter waitingTimeWriter = new PrintWriter(waitingTimeSocket.getOutputStream(), true);
+                        int waitingTime = RandomWaitingTime();
+                        System.out.println("(Reception) Il tempo finché un tavolo si liberi è " + waitingTime + " minuti");
+                        waitingTimeWriter.println(waitingTime);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
                     }
                 }
-            }
-        } catch (IOException exc) {
-            System.out.println("(Reception) Errore creazione socket o impossibile connettersi al cliente");
+                }
+            } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 

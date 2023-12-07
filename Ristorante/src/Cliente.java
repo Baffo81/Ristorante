@@ -6,9 +6,7 @@ import java.util.Scanner;
 import java.util.concurrent.*;
 
 public class Cliente {
-    boolean wait = false, // used to check if the customer has already waited once
-            byebye = false; // used to notify the receptionist that the customer has left after the second wait
-    private Scanner scanner;
+    private final Scanner scanner;
 
     public Cliente(Scanner scanner) {
         this.scanner = scanner;
@@ -36,7 +34,6 @@ public class Cliente {
             // gets waiter response
             seatsWriter.println(requiredSeats);
             answer = Boolean.parseBoolean(checkSeats.readLine());
-            seatsWriter.println(byebye);
             receptionSocket.close();
 
             // if there are available seats, the customer takes them
@@ -64,7 +61,7 @@ public class Cliente {
             }
 
             // otherwise, he goes away
-            else if (!wait) {
+            else {
                 try (Socket receptionSocket2 = new Socket(InetAddress.getLocalHost(), PORT_TO_RECEPTION)) {
                     // objects for reading and writing through the socket
                     BufferedReader checkSeats2 = new BufferedReader(new InputStreamReader(receptionSocket2.getInputStream()));
@@ -73,11 +70,10 @@ public class Cliente {
                     // Decide se vuoi aspettare o meno
                     waitingTime = Integer.parseInt(checkSeats2.readLine());
 
-                    System.out.println("Vuoi attendere " + waitingTime + " minuti ?");
+                    System.out.println("(Reception) Vuoi attendere " + waitingTime + " minuti ?");
                     answerWaitingTime = scanner.next();
 
                     if (answerWaitingTime.equalsIgnoreCase("si")) {
-                        wait = true;
                         System.out.println("(Cliente) Attendo " + waitingTime + " minuti");
 
                         // Creo un oggetto che pianifica l'esecuzione periodica o ritardata di task
@@ -96,14 +92,9 @@ public class Cliente {
                         }
                     } else {
                         System.out.println("(Cliente) Me ne vado!");
-                        leaveWriter.println("byebye");  // Invia il messaggio distintivo al receptionist
                     }
 
                 }
-            } else {
-                System.out.println("(Cliente) Me ne vado non attendo una seconda volta!");
-
-
             }
         } catch (IOException exc) {
             System.out.println("(Client) Errore creazione socket o impossibile connettersi al server");
