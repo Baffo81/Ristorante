@@ -4,54 +4,55 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Random;
 import java.util.concurrent.Semaphore;
 
-public class Receptionist
-{
-    public static void main(String [] args)
-    {
-        final int PORT = 1313;                                          //number of the port on which communicates with customers
-        final Semaphore availableSeats = new Semaphore(100);    //number of available seats for customers
+public class Receptionist {
+    public static void main(String[] args) {
+        final int PORT = 1313; // number of the port on which communicates with customers
+        final Semaphore availableSeats = new Semaphore(100); // number of available seats for customers
+        boolean bybye = false;
 
-        //creates a socket to connect with customers
-        try(ServerSocket receptionSocket = new ServerSocket(PORT))
-        {
-            //keeps checking customers' booking
-            while(true)
-            {
+        try (ServerSocket receptionSocket = new ServerSocket(PORT)) {
+            while (true) {
                 System.out.println("(Reception) In attesa di prenotazioni da clienti");
 
-                //arrives a customer
                 Socket acceptedClient = receptionSocket.accept();
-
-                //objects for reading and writing through the socket
                 BufferedReader reader = new BufferedReader(new InputStreamReader(acceptedClient.getInputStream()));
                 PrintWriter writer = new PrintWriter(acceptedClient.getOutputStream(), true);
 
-                //gets how many seats the customer requires
                 int requiredSeats = Integer.parseInt(reader.readLine());
 
-                //if there are enough available seats, the customer can enter the restaurant and take them
-                if (availableSeats.tryAcquire(requiredSeats))
-                {
-                    //upgrades number of available seats
+                if (availableSeats.tryAcquire(requiredSeats)) {
                     System.out.println("(Reception) Il cliente prende posto");
                     writer.println(true);
-                    System.out.println("(Reception) Numero dei posti aggiornati:" + availableSeats.availablePermits());
-
-                    //the customer exits the restaurant and its seats are now free
+                    System.out.println("(Reception) Numero dei posti disponibili:" + availableSeats.availablePermits());
                     availableSeats.release(requiredSeats);
-                }
-                else
-                {
+                } else {
                     System.out.println("(Reception) Non ci sono abbastanza posti");
                     writer.println(false);
+                    bybye = Boolean.parseBoolean(reader.readLine());
+                    if (bybye) {
+                        System.out.println("(Reception) Il cliente se ne andato");
+                        acceptedClient.close(); // Chiudi la connessione con il cliente
+                    } else {
+                        // Creare una seconda connessione per comunicare il tempo di attesa
+                        try (Socket waitingTimeSocket = receptionSocket.accept()) {
+                            PrintWriter waitingTimeWriter = new PrintWriter(waitingTimeSocket.getOutputStream(), true);
+                            int waitingTime = RandomWaitingTime();
+                            System.out.println("(Reception) Il tempo finché un tavolo si liberi è " + waitingTime + " minuti");
+                            waitingTimeWriter.println(waitingTime);
+                        }
+                    }
                 }
             }
-        }
-        catch (IOException exc)
-        {
+        } catch (IOException exc) {
             System.out.println("(Reception) Errore creazione socket o impossibile connettersi al cliente");
         }
+    }
+
+    public static int RandomWaitingTime() {
+        Random random = new Random();
+        return random.nextInt(30) + 1;
     }
 }
