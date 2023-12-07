@@ -1,4 +1,2 @@
-pasta al sugo
-8.5
-pasta al pesto
-5.5
+Pasta al pomodoro
+4.4
