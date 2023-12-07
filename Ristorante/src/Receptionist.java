@@ -11,7 +11,6 @@ public class Receptionist {
     public static void main(String[] args) {
         final int PORT = 1313; // number of the port on which communicates with customers
         final Semaphore availableSeats = new Semaphore(100); // number of available seats for customers
-        boolean bybye = false;
 
         try (ServerSocket receptionSocket = new ServerSocket(PORT)) {
             while (true) {

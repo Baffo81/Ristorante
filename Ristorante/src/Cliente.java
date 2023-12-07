@@ -85,7 +85,9 @@ public class Cliente {
                         // Wait for the task to complete (the estimated wait time)
                         try {
                             waitTask.get(); // restituisce la fine della task (è bloccante)
-                        } catch (InterruptedException | ExecutionException e) {
+                        }
+                        catch (InterruptedException | ExecutionException e)
+                        {
                             e.printStackTrace();
                         } finally {
                             scheduler.shutdown(); // rilascio le risorse
