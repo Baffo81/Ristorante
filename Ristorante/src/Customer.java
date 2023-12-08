@@ -1,110 +1,124 @@
 import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.util.Random;
 import java.util.Scanner;
 import java.util.concurrent.*;
 
 public class Customer {
-    private final Scanner scanner;
+    final Scanner scanner = new Scanner(System.in);
 
-    public Customer(Scanner scanner) {
-        this.scanner = scanner;
-    }
-    final int PORT_TO_RECEPTION = 1313; // port's number used for the connection to the reception
-    final int PORT_TO_EMPLOYEE = 1314; // used for the connection to employee
-    final int PORT_TO_WAITER = 1316; // port's number used for the connection to waiters
-
-    public void Comunicate() {
-        int requiredSeats, // number of required seats
-                waitingTime; // number of waitingTime
-        boolean answer; // true if there are available seats and false otherwise
-        String order, // requested order by the customer
-                answerWaitingTime; // used to check if the user wants waiting
+    public void run() {
+        final int PORT_TO_RECEPTION = 1313; // used for the connection with the receptionist
+        final int PORT_TO_EMPLOYEE = 1314;  // used for the connection with employees
+        final int PORT_TO_WAITER = 1316;    // used for the connection with waiters
+        BufferedReader checkSeats;          // used to get receptionist answer about if there are available seats
+        PrintWriter sendSeats;              // used to say to the receptionist how many seats he requires
+        BufferedReader eatOrder;            // used to take end eat a ready order
+        PrintWriter takeOrder;              // used to order a menu order to a employee
+        int requiredSeats;                  // number of required seats
+        int tableNumber;                    // number of customer's table
+        int waitingTime;                    // time the customer has to wait to enter
+        String order,                       // requested order by the customer
+                answerWaitingTime;          // used to check if the user wants waiting
 
         // tries to create a socket with specified server's address and port's number to communicate with the waiter
         try (Socket receptionSocket = new Socket(InetAddress.getLocalHost(), PORT_TO_RECEPTION)) {
-            // objects for reading and writing through the socket
-            BufferedReader checkSeats = new BufferedReader(new InputStreamReader(receptionSocket.getInputStream()));
-            PrintWriter seatsWriter = new PrintWriter(receptionSocket.getOutputStream(), true);
 
-            // says how many seats he needs
+            // says how many seats he needs to the receptionist and gets table number
+            checkSeats = new BufferedReader(new InputStreamReader(receptionSocket.getInputStream()));
+            sendSeats = new PrintWriter(receptionSocket.getOutputStream(), true);
             requiredSeats = getRequiredSeats();
             System.out.println("(Cliente) Mi servono " + requiredSeats + " posti");
-
-            // gets waiter response
-            seatsWriter.println(requiredSeats);
-            answer = Boolean.parseBoolean(checkSeats.readLine());
+            sendSeats.println(requiredSeats);
+            tableNumber = Integer.parseInt(checkSeats.readLine());
             receptionSocket.close();
 
             // if there are available seats, the customer takes them
-            if (answer) {
-                int TABLENUMBER = RandomTableNumber();
+            if (tableNumber >= 0) {
+
                 // gets the menù
-                System.out.println("(Cliente) Prendo posto al tavolo " + TABLENUMBER + " e scannerizzo il menù");
+                System.out.println("(Cliente) Prendo posto al tavolo " + tableNumber + " e scannerizzo il menù");
 
-                // keeps ordering and eating
-                    try (Socket waiterSocket = new Socket(InetAddress.getLocalHost(), PORT_TO_EMPLOYEE)) {
-                        // objects for reading and writing through the socket
-                        BufferedReader orderReader = new BufferedReader(new InputStreamReader(waiterSocket.getInputStream()));
-                        PrintWriter orderWriter = new PrintWriter(waiterSocket.getOutputStream(), true);
-                        // orders, wait for the order and eats it
-                        System.out.println("(Cliente) Effettuo un'ordinazione");
+                // creates a socket to take orders
+                try (Socket employeeSocket = new Socket(InetAddress.getLocalHost(), PORT_TO_EMPLOYEE);
+                     Socket waiterSocket = new Socket(InetAddress.getLocalHost(), PORT_TO_WAITER)) {
+
+                    // shows the menu
+                    getMenu();
+
+                    // simulates customer's orders
+                    for (int i = 0; i < 4; i++) {
+
+                        // orders, waits for the order and eats it
+                        eatOrder = new BufferedReader(new InputStreamReader(waiterSocket.getInputStream()));
+                        takeOrder = new PrintWriter(employeeSocket.getOutputStream(), true);
                         order = getOrder();
-                        System.out.println("(Cliente) Ordino " + order + " al tavolo " + TABLENUMBER);
-                        orderWriter.println(order + " - Tavolo " + TABLENUMBER);
+                        takeOrder.println(order + "|" + tableNumber);
+                        order = eatOrder.readLine();
+                        System.out.println("(Cliente) Mangio " + order);
+                        try {
+                            Thread.sleep(1000);
+                        }
+                        catch(InterruptedException exc)
+                        {
+                            throw new RuntimeException(exc);
+                        }
 
-                        /*order = orderReader.readLine();
-                        System.out.println("(Cliente) Mangio " + order);*/
                     }
+                }
+                catch (IOException exc) {
+                    throw new RuntimeException(exc);
+                }
             }
 
-            // otherwise, he goes away
+            // otherwise, he waits
             else {
                 try (Socket receptionSocket2 = new Socket(InetAddress.getLocalHost(), PORT_TO_RECEPTION)) {
+
                     // objects for reading and writing through the socket
                     BufferedReader checkSeats2 = new BufferedReader(new InputStreamReader(receptionSocket2.getInputStream()));
-                    PrintWriter leaveWriter = new PrintWriter(receptionSocket2.getOutputStream(), true);
 
-                    // Decide se vuoi aspettare o meno
+                    // decides if waiting or not
                     waitingTime = Integer.parseInt(checkSeats2.readLine());
 
                     System.out.println("(Reception) Vuoi attendere " + waitingTime + " minuti ?");
                     answerWaitingTime = scanner.next();
 
                     if (answerWaitingTime.equalsIgnoreCase("si")) {
-                        System.out.println("(Cliente) Attendo " + waitingTime + " minuti");
 
-                        // Creo un oggetto che pianifica l'esecuzione periodica o ritardata di task
+                        // creates a scheduler to plan the periodic execution of tasks
                         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-                        // Pianifico quale task deve compiere dopo un certo periodo di attesa, specificando l'unità di tempo
-                        ScheduledFuture<?> waitTask = scheduler.schedule(this::onWaitComplete, waitingTime,
-                                TimeUnit.SECONDS);
 
-                        // Wait for the task to complete (the estimated wait time)
+                        // plans which task execute after a waiting time, and specifies the time unity
+                        ScheduledFuture<?> waitTask = scheduler.schedule(this::onWaitComplete, waitingTime, TimeUnit.SECONDS);
+
+                        // waits for the task to complete (the estimated wait time)
                         try {
                             waitTask.get(); // restituisce la fine della task (è bloccante)
                         }
-                        catch (InterruptedException | ExecutionException e)
-                        {
-                            throw new RuntimeException(e);
-                        } finally {
+                        catch (InterruptedException | ExecutionException exc) {
+                            throw new RuntimeException(exc);
+                        }
+
+                        // deallocates used resources
+                        finally {
                             scheduler.shutdown(); // rilascio le risorse
                         }
-                    } else {
+                    }
+                    else {
                         System.out.println("(Cliente) Me ne vado!");
                     }
-
                 }
             }
-        } catch (IOException exc) {
-            System.out.println("(Client) Errore creazione socket o impossibile connettersi al server");
+        }
+        catch (IOException exc) {
+            throw new RuntimeException(exc);
         }
     }
 
     private void onWaitComplete() {
         System.out.println("(Cliente) Attesa completata. Riprovo a prendere posto.");
-        Comunicate(); // Riesegue il metodo run per riprovare a prendere posto
+        run();
     }
 
     // allows customer to say how many seats he needs
@@ -118,19 +132,11 @@ public class Customer {
         // customer's order
         String order;
 
-        // show the menu to the customer
-        getMenu();
-
         // gets customer's order
-        System.out.println("Scegli un ordine da effettuare");
-        scanner.nextLine(); // Consuma il resto della linea, inclusa la nuova riga
-        order = scanner.nextLine(); // consume newline character
-
-        // checks if customer's requested order is in the menù
-        while (!checkOrder(order)) {
-            System.out.println("Ordine non disponibile, scegline un altro");
-            order = scanner.next();
-        }
+        do {
+            System.out.println("Scegli un ordine da effettuare");
+            order = scanner.nextLine();
+        } while (!checkOrder(order));
 
         return order;
     }
@@ -145,10 +151,11 @@ public class Customer {
                 if (menuOrder.equals(order))
                     return true;
 
-            // close the connection to the file
+            // closes the connection to the file
             bufferedReader.close();
             return false;
-        } catch (Exception exc) {
+        }
+        catch (Exception exc) {
             System.out.println("Errore connessione al file");
             return false;
         }
@@ -169,23 +176,16 @@ public class Customer {
                 System.out.println("Prezzo: " + price);
             }
 
-            // close the connection to the file
+            // closes the connection to the file
             bufferedReader.close();
-        } catch (Exception exc) {
+        }
+        catch (Exception exc) {
             System.out.println("Errore scannerizzazione menù");
         }
     }
 
-    // Genero il numero del tavolo
-    public int RandomTableNumber() {
-        Random random = new Random();
-        return random.nextInt(50) + 1;
-    }
-
     public static void main(String[] args) {
-        try (Scanner scanner = new Scanner(System.in)) {
-            Customer client = new Customer(scanner);
-            client.Comunicate();
-        }
+            Customer customer = new Customer();
+            customer.run();
     }
 }
