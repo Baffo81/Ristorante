@@ -10,7 +10,6 @@ public class Customer {
     public void run() {
         // ------------------------------------- ports for the communication -------------------------------------------
         final int PORT_TO_RECEPTION = 1313,    // used for the connection with the receptionist
-                  PORT_TO_EMPLOYEE  = 1314,    // used for the connection with employees
                   PORT_TO_WAITER    = 1316;    // used for the connection with waiters
         // -------------------------------------------------------------------------------------------------------------
 
@@ -48,8 +47,7 @@ public class Customer {
                 System.out.println("(Cliente) Prendo posto al tavolo " + tableNumber + " e scannerizzo il menù");
 
                 // creates a socket to take orders
-                try (Socket employeeSocket = new Socket(InetAddress.getLocalHost(), PORT_TO_EMPLOYEE);
-                     Socket waiterSocket = new Socket(InetAddress.getLocalHost(), PORT_TO_WAITER)) {
+                try (Socket waiterSocket = new Socket(InetAddress.getLocalHost(), PORT_TO_WAITER)){
 
                     // shows the menu
                     getMenu();
@@ -59,7 +57,7 @@ public class Customer {
 
                         // orders, waits for the order and eats it
                         eatOrder = new BufferedReader(new InputStreamReader(waiterSocket.getInputStream()));
-                        takeOrder = new PrintWriter(employeeSocket.getOutputStream(), true);
+                        takeOrder = new PrintWriter(waiterSocket.getOutputStream(), true);
                         order = getOrder();
                         takeOrder.println(order);
                         order = eatOrder.readLine();
@@ -142,6 +140,7 @@ public class Customer {
         // gets customer's order
         do {
             System.out.println("Scegli un ordine da effettuare");
+            scanner.nextLine();
             order = scanner.nextLine();
         } while (!checkOrder(order));
 
