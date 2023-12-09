@@ -1,39 +1,54 @@
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.InetAddress;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-public class Waiter extends Thread {
-    // ------------------------------------- ports for the communication ------------------------------
-    static final int PORT_TO_CHEF     = 1315,      // used for the connection with the chef
-                     PORT_TO_CUSTOMER = 1316;      // used for the connection with customers
-    // ------------------------------------------------------------------------------------------------
+public class Waiter {
+    static final int PORT_TO_CUSTOMER = 1316;
 
-    public static void main(String [] args) {
+    public static void main(String[] args) {
         Waiter waiter = new Waiter();
-        waiter.start();
+        waiter.waiter();
     }
 
-    public void waiter(String[] args) {
-        Socket acceptedCustomer;            // used to accept a customer's order
-        BufferedReader takeOrder,           // used to get a customer's order
-                       takeReadyOrder;      // used to get chef's ready order
-        PrintWriter sendOrder,              // used to send a customer's order to the chef
-                    sendReadyOrder;         // used to send to the customer the ready order
-        String order;                       // requested order by a customer
-        int tableNumber;                    // number of customer's table
-
-
-        //waits for a customer's order
-
+    public void waiter() {
+        try (ServerSocket serverSocket = new ServerSocket(PORT_TO_CUSTOMER)) {
+            while (true) {
+                System.out.println("(CapoSala) Attendo l'ordine del cliente");
+                Socket acceptedCustomer = serverSocket.accept();
+                System.out.println("(CapoSala) Comando allo sguattero di inviare l'ordine allo chef");
+                startWaiterSonProcess(acceptedCustomer);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    public void run() {
-        System.out.println("(Impiegato " + Thread.currentThread().threadId() + ") Attendo l'ordine di un cliente");
+    private void startWaiterSonProcess(Socket customerSocket) throws IOException {
+        try {
+            // Ottieni gli stream di input/output del processo figlio
+            ProcessBuilder processBuilder = new ProcessBuilder("java", "WaiterSon");
+            Process waiterSonProcess = processBuilder.start();
 
+            // Invia le informazioni della socket al processo figlio
+            OutputStream outputStream = waiterSonProcess.getOutputStream();
+            outputStream.write((customerSocket.getInetAddress() + "\n").getBytes());
+            outputStream.write((customerSocket.getPort() + "\n").getBytes());
+            outputStream.flush();
+
+            // Attendere che il processo figlio sia pronto per ricevere l'ordine
+            InputStream inputStream = waiterSonProcess.getInputStream();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream));
+
+            // Leggi il messaggio di prontezza dal processo figlio
+            String readyMessage = reader.readLine();
+            if (!"READY".equals(readyMessage)) {
+                throw new RuntimeException("Il processo figlio non è pronto");
+            }
+
+            // Chiudi l'output stream per indicare al processo figlio che tutte le informazioni sono state inviate
+            outputStream.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
-
 }
