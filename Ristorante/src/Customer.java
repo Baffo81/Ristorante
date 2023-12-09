@@ -8,18 +8,26 @@ public class Customer {
     final Scanner scanner = new Scanner(System.in);
 
     public void run() {
-        final int PORT_TO_RECEPTION = 1313; // used for the connection with the receptionist
-        final int PORT_TO_EMPLOYEE = 1314;  // used for the connection with employees
-        final int PORT_TO_WAITER = 1316;    // used for the connection with waiters
-        BufferedReader checkSeats;          // used to get receptionist answer about if there are available seats
-        PrintWriter sendSeats;              // used to say to the receptionist how many seats he requires
-        BufferedReader eatOrder;            // used to take end eat a ready order
-        PrintWriter takeOrder;              // used to order a menu order to a employee
-        int requiredSeats;                  // number of required seats
-        int tableNumber;                    // number of customer's table
-        int waitingTime;                    // time the customer has to wait to enter
+        // ------------------------------------- ports for the communication -------------------------------------------
+        final int PORT_TO_RECEPTION = 1313,    // used for the connection with the receptionist
+                  PORT_TO_EMPLOYEE  = 1314,    // used for the connection with employees
+                  PORT_TO_WAITER    = 1316;    // used for the connection with waiters
+        // -------------------------------------------------------------------------------------------------------------
+
+        // ------------------------------------- objects to read and write through the socket --------------------------
+        BufferedReader checkSeats,          // used to get receptionist answer about if there are available seats
+                       eatOrder;            // used to take end eat a ready order
+        PrintWriter sendSeats,              // used to say to the receptionist how many seats he requires
+                    takeOrder;              // used to take end eat a ready order
+        // -------------------------------------------------------------------------------------------------------------
+
+        // ----------------------------------------- variables ---------------------------------------------------------
+        int requiredSeats,                  // number of required seats
+            tableNumber,                    // number of customer's table
+            waitingTime;                    // time the customer has to wait to enter
         String order,                       // requested order by the customer
-                answerWaitingTime;          // used to check if the user wants waiting
+               answerWaitingTime;           // used to check if the user wants waiting
+        // -------------------------------------------------------------------------------------------------------------
 
         // tries to create a socket with specified server's address and port's number to communicate with the waiter
         try (Socket receptionSocket = new Socket(InetAddress.getLocalHost(), PORT_TO_RECEPTION)) {
@@ -53,14 +61,13 @@ public class Customer {
                         eatOrder = new BufferedReader(new InputStreamReader(waiterSocket.getInputStream()));
                         takeOrder = new PrintWriter(employeeSocket.getOutputStream(), true);
                         order = getOrder();
-                        takeOrder.println(order + "|" + tableNumber);
+                        takeOrder.println(order);
                         order = eatOrder.readLine();
                         System.out.println("(Cliente) Mangio " + order);
                         try {
                             Thread.sleep(1000);
                         }
-                        catch(InterruptedException exc)
-                        {
+                        catch(InterruptedException exc) {
                             throw new RuntimeException(exc);
                         }
 

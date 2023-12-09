@@ -8,9 +8,8 @@ public class Chef {
         final int PORT = 1315;              // used for communication with waiters
         Socket acceptedEmployee;            // specifies which waiter is communicating with the chef
         BufferedReader takeOrder;           // used to receive request of preparing an order by waiters
-        String message;                     // combination of customer's order and table number
+        PrintWriter sendOrder;              // used to send a ready order to a waiter
         String order;                       // requested order by a waiter
-        int tableNumber;                    // number of customer's table
 
         // writes the menù
         writeMenu();
@@ -23,15 +22,19 @@ public class Chef {
                 System.out.println("(Cuoco) Attendo un ordine");
                 acceptedEmployee = serverSocket.accept();
 
-                // reads an order and prepares it
+                // reads an order, prepares it and sends it back to the waiter
                 takeOrder = new BufferedReader(new InputStreamReader(acceptedEmployee.getInputStream()));
-                message = takeOrder.readLine();
-                String [] parts = message.split("\\|");
-                order = parts[0];
-                tableNumber = Integer.parseInt(parts[1]);
-                acceptedEmployee.close();
+                sendOrder = new PrintWriter(acceptedEmployee.getOutputStream());
+                order = takeOrder.readLine();
                 System.out.println("(Cuoco) Preparo l'ordine");
-                prepareOrder(order, tableNumber);
+                try {
+                    Thread.sleep(3000);
+                }
+                catch(InterruptedException exc) {
+                    throw new RuntimeException(exc);
+                }
+                sendOrder.println(order);
+                acceptedEmployee.close();
             }
         }
         catch (IOException exc) {
@@ -78,20 +81,5 @@ public class Chef {
         catch (IOException exc) {
             System.out.println("(Cuoco) Impossibile connettersi al file");
         }
-    }
-
-    // allows the chef to store prepared orders
-    public static void prepareOrder(String order, int tableNumber) {
-
-        // opens the file and writes an order and its table number
-        try (FileWriter orderWriter = new FileWriter("orders.txt")) {
-            PrintWriter writer = new PrintWriter(orderWriter);
-            writer.println(order);
-            writer.println(tableNumber);
-        }
-        catch (IOException exc) {
-            System.out.println("(Cuoco) Impossibile connettersi al file");
-        }
-
     }
 }
