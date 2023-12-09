@@ -8,14 +8,14 @@ import java.util.Random;
 import java.util.concurrent.*;
 
 public class Receptionist {
-    final static int PORT = 1313;                                                                   // used for the communication with customers
-    final static int MAX_TABLES = 20;                                                               // number of restaurant's tables
+    final static int PORT = 1313,                                                                   // used for the communication with customers
+                     MAX_TABLES = 20;                                                               // number of restaurant's tables
     static Random rand = new Random();                                                              // used to generate random numbers
-    static int availableSeats = 100;                                                                // number of available seats for customers
-    static int availableTables = 20;                                                                // number of available tables for customers
-    static int requiredSeats;                                                                       // number of customer's required seats
+    static int availableSeats = 100,                                                                // number of available seats for customers
+               availableTables = 20,                                                                // number of available tables for customers
+               requiredSeats,                                                                       // number of customer's required seats
+               tableNumber;                                                                         // customer's table number
     static int [] tables = new int[MAX_TABLES];                                                     // 0 in a cell means free table, 1 means occupied table
-    static int tableNumber;                                                                         // customer's table number
     static BufferedReader readSeatsNumber;                                                          // used to read customer requested seats
     static PrintWriter giveTableNumber;                                                             // used to assign a table to the customer
     public void run() {
@@ -42,18 +42,19 @@ public class Receptionist {
                     scheduler.schedule(() -> releaseTable(requiredSeats, tableNumber), 5, TimeUnit.SECONDS);
                 }
                 else {
-                    System.out.println("(Reception) Non ci sono abbastanza posti");
+                    System.out.println("(Receptionist) Non ci sono abbastanza posti");
                     giveTableNumber.println(-1);
 
                     // creare una seconda connessione per comunicare il tempo di attesa
                     try (Socket waitingTimeSocket = receptionSocket.accept()) {
                         PrintWriter waitingTimeWriter = new PrintWriter(waitingTimeSocket.getOutputStream(), true);
                         int waitingTime = randomWaitingTime();
-                        System.out.println("(Reception) Il tempo finché un tavolo si liberi è " + waitingTime + " minuti");
+                        System.out.println("(Receptionist) Il tempo finché un tavolo si liberi è " + waitingTime + " minuti");
                         waitingTimeWriter.println(waitingTime);
                     }
-                    catch (IOException e) {
-                        throw new RuntimeException(e);
+                    catch (IOException exc) {
+                        System.out.println("(Receptionist) Impossibile comunicare con il cliente");
+                        throw new RuntimeException(exc);
                     }
                 }
             }
@@ -78,8 +79,7 @@ public class Receptionist {
         while (tables[tableNumber] == 1);
         tables[tableNumber] = 1;
         giveTableNumber.println(tableNumber);
-        System.out.println("(Reception) Il cliente prende posto");
-        System.out.println("(Reception) Numero di posti e tavoli disponibili: " + availableSeats + " " + availableTables);
+        System.out.println("(Receptionist) Il cliente prende posto, numero di posti e tavoli disponibili: " + availableSeats + " " + availableTables);
     }
 
     // allows the receptionist to release a table and to update available seats and tables
@@ -87,8 +87,7 @@ public class Receptionist {
         availableTables++;
         availableSeats += requiredSeats;
         tables[tableNumber] = 0;
-        System.out.println("(Receptionist) Ho liberato un tavolo");
-        System.out.println("(Reception) Numero di posti e tavoli disponibili: " + availableSeats + " " + availableTables);
+        System.out.println("(Receptionist) Tavolo liberato, numero di posti e tavoli disponibili: " + availableSeats + " " + availableTables);
     }
 
     public static void main(String[] args) {

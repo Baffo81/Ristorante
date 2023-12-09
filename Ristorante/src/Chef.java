@@ -26,19 +26,14 @@ public class Chef {
                 takeOrder = new BufferedReader(new InputStreamReader(acceptedEmployee.getInputStream()));
                 sendOrder = new PrintWriter(acceptedEmployee.getOutputStream());
                 order = takeOrder.readLine();
-                System.out.println("(Cuoco) Preparo l'ordine");
-                try {
-                    Thread.sleep(3000);
-                }
-                catch(InterruptedException exc) {
-                    throw new RuntimeException(exc);
-                }
+                prepareOrder(order);
                 sendOrder.println(order);
                 acceptedEmployee.close();
             }
         }
         catch (IOException exc) {
-            System.out.println("(Server) Errore creazione socket o impossibile connettersi al cameriere");
+            System.out.println("(Cuoco) Impossibile comunicare con il cameriere");
+            throw new RuntimeException(exc);
         }
     }
 
@@ -79,7 +74,21 @@ public class Chef {
             while (status.equalsIgnoreCase("s"));
         }
         catch (IOException exc) {
-            System.out.println("(Cuoco) Impossibile connettersi al file");
+            System.out.println("(Cuoco) Errore scrittura menù");
+            throw new RuntimeException(exc);
         }
+    }
+
+    //simulates the preparation of a order by the chef
+    public static void prepareOrder(String order) {
+        System.out.println("(Cuoco) Preparo: " + order);
+        try {
+            Thread.sleep(3000);
+        }
+        catch(InterruptedException exc) {
+            System.out.println("(Cuoco) Errore utilizzo sleep");
+            throw new RuntimeException(exc);
+        }
+        System.out.println("(Cuoco) Ordine pronto e consegnato al cameriere");
     }
 }

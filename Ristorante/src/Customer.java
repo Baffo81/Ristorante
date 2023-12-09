@@ -31,11 +31,10 @@ public class Customer {
         // tries to create a socket with specified server's address and port's number to communicate with the waiter
         try (Socket receptionSocket = new Socket(InetAddress.getLocalHost(), PORT_TO_RECEPTION)) {
 
-            // says how many seats he needs to the receptionist and gets table number
+            // says how many seats he needs to the receptionist and gets a table
             checkSeats = new BufferedReader(new InputStreamReader(receptionSocket.getInputStream()));
             sendSeats = new PrintWriter(receptionSocket.getOutputStream(), true);
             requiredSeats = getRequiredSeats();
-            System.out.println("(Cliente) Mi servono " + requiredSeats + " posti");
             sendSeats.println(requiredSeats);
             tableNumber = Integer.parseInt(checkSeats.readLine());
             receptionSocket.close();
@@ -66,12 +65,14 @@ public class Customer {
                             Thread.sleep(1000);
                         }
                         catch(InterruptedException exc) {
+                            System.out.println("(Cliente) Errore utilizzo sleep");
                             throw new RuntimeException(exc);
                         }
 
                     }
                 }
                 catch (IOException exc) {
+                    System.out.println("(Cliente) Impossibile comunicare con il cameriere");
                     throw new RuntimeException(exc);
                 }
             }
@@ -102,6 +103,7 @@ public class Customer {
                             waitTask.get(); // restituisce la fine della task (è bloccante)
                         }
                         catch (InterruptedException | ExecutionException exc) {
+                            System.out.println("(Cliente) Errore utilizzo scheduler");
                             throw new RuntimeException(exc);
                         }
 
@@ -117,6 +119,7 @@ public class Customer {
             }
         }
         catch (IOException exc) {
+            System.out.println("(Cliente) Impossibile comunicare con il receptionist");
             throw new RuntimeException(exc);
         }
     }
@@ -130,7 +133,9 @@ public class Customer {
     public int getRequiredSeats() {
         // reads customer requested seats
         System.out.println("Benvenuto, di quanti posti hai bisogno?");
-        return scanner.nextInt();
+        int requiredSeats = scanner.nextInt();
+        System.out.println("(Cliente) Mi servono " + requiredSeats + " posti");
+        return requiredSeats;
     }
 
     public String getOrder() {
@@ -162,8 +167,8 @@ public class Customer {
             return false;
         }
         catch (Exception exc) {
-            System.out.println("Errore connessione al file");
-            return false;
+            System.out.println("(Cliente) Errore apertura menù");
+            throw new RuntimeException(exc);
         }
     }
 
@@ -186,7 +191,8 @@ public class Customer {
             bufferedReader.close();
         }
         catch (Exception exc) {
-            System.out.println("Errore scannerizzazione menù");
+            System.out.println("(Cliente) Errore scannerizzazione menù");
+            throw new RuntimeException(exc);
         }
     }
 

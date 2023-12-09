@@ -13,9 +13,8 @@ public class Waiter {
     public void waiter() {
         try (ServerSocket serverSocket = new ServerSocket(PORT_TO_CUSTOMER)) {
             while (true) {
-                System.out.println("(CapoSala) Attendo l'ordine del cliente");
+                System.out.println("(Cameriere) Attendo l'ordine del cliente");
                 Socket acceptedCustomer = serverSocket.accept();
-                System.out.println("(CapoSala) Comando allo sguattero di inviare l'ordine allo chef");
                 startWaiterSonProcess(acceptedCustomer);
             }
         } catch (IOException e) {
