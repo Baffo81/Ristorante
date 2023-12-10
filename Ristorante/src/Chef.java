@@ -6,7 +6,7 @@ import java.util.Scanner;
 public class Chef {
     public static void main(String[] args) {
         final int PORT = 1315;              // used for communication with waiters
-        Socket acceptedEmployee;            // specifies which waiter is communicating with the chef
+        Socket acceptedOrder;               // used to accept an order
         BufferedReader takeOrder;           // used to receive request of preparing an order by waiters
         PrintWriter sendOrder;              // used to send a ready order to a waiter
         String order;                       // requested order by a waiter
@@ -20,15 +20,15 @@ public class Chef {
             while (true) {
                 // waits for an order request by a waiter
                 System.out.println("(Cuoco) Attendo un ordine");
-                acceptedEmployee = serverSocket.accept();
+                acceptedOrder = serverSocket.accept();
 
                 // reads an order, prepares it and sends it back to the waiter
-                takeOrder = new BufferedReader(new InputStreamReader(acceptedEmployee.getInputStream()));
-                sendOrder = new PrintWriter(acceptedEmployee.getOutputStream());
+                takeOrder = new BufferedReader(new InputStreamReader(acceptedOrder.getInputStream()));
+                sendOrder = new PrintWriter(acceptedOrder.getOutputStream());
                 order = takeOrder.readLine();
                 prepareOrder(order);
                 sendOrder.println(order);
-                acceptedEmployee.close();
+                acceptedOrder.close();
             }
         }
         catch (IOException exc) {

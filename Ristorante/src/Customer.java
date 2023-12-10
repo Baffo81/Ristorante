@@ -133,9 +133,7 @@ public class Customer {
     public int getRequiredSeats() {
         // reads customer requested seats
         System.out.println("Benvenuto, di quanti posti hai bisogno?");
-        int requiredSeats = scanner.nextInt();
-        System.out.println("(Cliente) Mi servono " + requiredSeats + " posti");
-        return requiredSeats;
+        return scanner.nextInt();
     }
 
     public String getOrder() {
