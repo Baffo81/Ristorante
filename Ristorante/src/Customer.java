@@ -48,15 +48,16 @@ public class Customer {
                 // creates a socket to take orders
                 try (Socket waiterSocket = new Socket(InetAddress.getLocalHost(), PORT_TO_WAITER)){
 
+
+                    // orders, waits for the order and eats it
+                    eatOrder = new BufferedReader(new InputStreamReader(waiterSocket.getInputStream()));
+                    takeOrder = new PrintWriter(waiterSocket.getOutputStream(), true);
+
                     // shows the menu
                     getMenu();
 
                     // simulates customer's orders
                     for (int i = 0; i < 4; i++) {
-
-                        // orders, waits for the order and eats it
-                        eatOrder = new BufferedReader(new InputStreamReader(waiterSocket.getInputStream()));
-                        takeOrder = new PrintWriter(waiterSocket.getOutputStream(), true);
                         order = getOrder();
                         takeOrder.println(order);
                         order = eatOrder.readLine();

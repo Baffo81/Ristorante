@@ -42,18 +42,17 @@ public class Waiter {
                             order = readOrderFromCustomer.readLine();
                             System.out.println("(Cameriere) Il cliente ordina " + order + ", mando l'ordine allo chef per prepararlo e attendo");
                             sendOrderToChef.println(order);
+                            sendOrderToChef.flush();
                             order = readReadyOrderFromChef.readLine();
+                            System.out.println("(Cameriere) Il piatto: " + order + " è pronto , lo consegno al cliente");
                             sendReadyOrderToCustomer.println(order);
+                            acceptedCustomer.close();
+
                         } catch (IOException exc) {
                             System.out.println("(Cameriere) Impossibile gestire l'ordine del cliente");
                             throw new RuntimeException(exc);
-                        } finally {
-                            try {
-                                acceptedCustomer.close();
-                            } catch (IOException exc) {
-                                System.out.println("(Cameriere) Impossibile chiudere la comunicazione con il cliente");
-                            }
                         }
+
                     }).start();
 
                 }
