@@ -4,15 +4,16 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 public class Waiter {
-    static final int PORT_TO_CUSTOMER = 1316,
-                     PORT_TO_CHEF = 1315;
-
     public static void main(String[] args) {
         Waiter waiter = new Waiter();
         waiter.waiter();
     }
 
     public void waiter() {
+
+
+        final int PORT_TO_CUSTOMER = 1316,      // used for the communication with customers
+                  PORT_TO_CHEF = 1315;          // used for the communication with the chef
 
         // creates a socket to communicate with customers
         try (ServerSocket serverSocket = new ServerSocket(PORT_TO_CUSTOMER)) {
@@ -42,8 +43,10 @@ public class Waiter {
                             order = readOrderFromCustomer.readLine();
                             System.out.println("(Cameriere) Il cliente ordina " + order + ", mando l'ordine allo chef per prepararlo e attendo");
                             sendOrderToChef.println(order);
+                            sendOrderToChef.flush();
                             order = readReadyOrderFromChef.readLine();
                             sendReadyOrderToCustomer.println(order);
+                            sendReadyOrderToCustomer.flush();
                         } catch (IOException exc) {
                             System.out.println("(Cameriere) Impossibile gestire l'ordine del cliente");
                             throw new RuntimeException(exc);
@@ -55,7 +58,6 @@ public class Waiter {
                             }
                         }
                     }).start();
-
                 }
             } catch (IOException exc) {
                 System.out.println("(Cameriere) Impossibile comunicare con il cuoco");
