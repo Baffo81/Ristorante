@@ -27,7 +27,10 @@ public class Chef {
                 sendOrder = new PrintWriter(acceptedOrder.getOutputStream());
                 order = takeOrder.readLine();
                 prepareOrder(order);
-                sendOrder.println(order);
+                // Invia l'ordine pronto al cameriere
+                sendOrder.println("Pronto");
+                sendOrder.flush();
+                System.out.println("(Cuoco) Piatti consegnati al cameriere: " + order );
                 acceptedOrder.close();
             }
         }
@@ -89,6 +92,7 @@ public class Chef {
             System.out.println("(Cuoco) Errore utilizzo sleep");
             throw new RuntimeException(exc);
         }
-        System.out.println("(Cuoco) Ordine pronto e consegnato al cameriere");
+        System.out.println("(Cuoco) Ordini pronti " );
     }
+
 }
