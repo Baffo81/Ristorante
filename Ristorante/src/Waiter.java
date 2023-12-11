@@ -4,15 +4,16 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 public class Waiter {
-    static final int PORT_TO_CUSTOMER = 1316,
-                     PORT_TO_CHEF = 1315;
-
     public static void main(String[] args) {
         Waiter waiter = new Waiter();
         waiter.waiter();
     }
 
     public void waiter() {
+
+
+        final int PORT_TO_CUSTOMER = 1316,      // used for the communication with customers
+                  PORT_TO_CHEF = 1315;          // used for the communication with the chef
 
         // creates a socket to communicate with customers
         try (ServerSocket serverSocket = new ServerSocket(PORT_TO_CUSTOMER)) {
@@ -38,23 +39,19 @@ public class Waiter {
                             PrintWriter sendReadyOrderToCustomer = new PrintWriter(acceptedCustomer.getOutputStream());
 
                             // gets a customer's order, sends it to the chef to prepare it, gets it ready from the chef and sends it back to the customer
-                            String order;
-                            order = readOrderFromCustomer.readLine();
-                            System.out.println("(Cameriere) Il cliente ordina " + order + ", mando l'ordine allo chef per prepararlo e attendo");
-                            sendOrderToChef.println(order);
-                            sendOrderToChef.flush();
-                            order = readReadyOrderFromChef.readLine();
-                            System.out.println("(Cameriere) Il piatto: " + order + " è pronto , lo consegno al cliente");
-                            sendReadyOrderToCustomer.println(order);
-                            acceptedCustomer.close();
+                            readOrder(readOrderFromCustomer, sendOrderToChef, readReadyOrderFromChef, sendReadyOrderToCustomer);
 
                         } catch (IOException exc) {
                             System.out.println("(Cameriere) Impossibile gestire l'ordine del cliente");
                             throw new RuntimeException(exc);
+                        } finally {
+                            try {
+                                acceptedCustomer.close();
+                            } catch (IOException exc) {
+                                System.out.println("(Cameriere) Impossibile chiudere la comunicazione con il cliente");
+                            }
                         }
-
                     }).start();
-
                 }
             } catch (IOException exc) {
                 System.out.println("(Cameriere) Impossibile comunicare con il cuoco");
@@ -64,5 +61,22 @@ public class Waiter {
             System.out.println("(Cameriere) Impossibile comunicare con il cliente");
             throw new RuntimeException(exc);
         }
+    }
+
+    public static void readOrder(BufferedReader readOrderFromCustomer, PrintWriter sendOrderToChef, BufferedReader readReadyOrderFromChef, PrintWriter sendReadyOrderToCustomer) throws IOException {
+        String order;
+        order = readOrderFromCustomer.readLine();
+        System.out.println("(Cameriere) Il cliente ordina " + order + ", mando l'ordine allo chef per prepararlo e attendo");
+        sendOrderToChef.println(order);
+        sendOrderToChef.flush();
+        order = readReadyOrderFromChef.readLine();
+
+        // take order form Chef and gives it to Costumer
+        sendOrder(sendReadyOrderToCustomer, order);
+    }
+
+    public static void sendOrder(PrintWriter sendReadyOrderToCustomer, String order){
+        sendReadyOrderToCustomer.println(order);
+        sendReadyOrderToCustomer.flush();
     }
 }

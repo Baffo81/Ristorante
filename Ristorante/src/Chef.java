@@ -21,7 +21,6 @@ public class Chef {
                 // waits for an order request by a waiter
                 System.out.println("(Cuoco) Attendo un ordine");
                 acceptedOrder = serverSocket.accept();
-                System.out.println("(Cuoco) Attendo un sas");
 
                 // reads an order, prepares it and sends it back to the waiter
                 takeOrder = new BufferedReader(new InputStreamReader(acceptedOrder.getInputStream()));
@@ -29,7 +28,6 @@ public class Chef {
                 order = takeOrder.readLine();
                 prepareOrder(order);
                 sendOrder.println(order);
-                sendOrder.flush();
                 acceptedOrder.close();
             }
         }
