@@ -76,6 +76,7 @@ public class Waiter {
     }
 
     public static void sendOrder(PrintWriter sendReadyOrderToCustomer, String order){
+        System.out.println("(Cameriere) i piatti:" + order + "sono pronti");
         sendReadyOrderToCustomer.println(order);
         sendReadyOrderToCustomer.flush();
     }

@@ -149,36 +149,43 @@ public class Customer {
         // used to get a customer's order and to send it to a waiter
         BufferedReader eatOrder = new BufferedReader(new InputStreamReader(waiterSocket.getInputStream()));
         PrintWriter takeOrder = new PrintWriter(waiterSocket.getOutputStream(), true);
+        Scanner scanner = new Scanner(System.in);
 
-        StringBuilder totOrder = new StringBuilder();
+        StringBuilder totOrder = new StringBuilder() ;
         String order,
                status;
-        float  bill;
+        float  bill = 0;
 
         do {
 
             // gets customer's order
-            do {
-                System.out.println("Scegli un ordine da effettuare");
-                scanner.nextLine();
-                order = scanner.nextLine();
-            } while (checkOrder(order) < 0);
+            System.out.println("Scegli un ordine da effettuare (digita 'fine' per terminare)");
+            order = scanner.nextLine().trim();
 
-            totOrder.append(order);
-            bill = checkOrder(order);
+            if (order.equalsIgnoreCase("fine")){
+                break;
+            }
 
-            System.out.println("Desideri continuare ad ordiare? (S/N)");
-            status = scanner.next();
-            scanner.nextLine();
+            if(checkOrder(order) < 0) {
+                bill += checkOrder(order);
+                System.out.println("Ordine non presente nel menù, RIPROVARE? (S/N)");
+            }else{
+                totOrder.append(order).append("\n");
+                System.out.println("Lista degli ordini:" + totOrder);
+                bill += checkOrder(order);
+                System.out.println("Prezzo tot:" + bill);
+            }
         }
-        while (status.equalsIgnoreCase("s"));
+        while (true);
 
-        // gets the order once ready
-        totOrder.append(eatOrder.readLine());
+        scanner.close();
 
         // sends the order to a waiter
         takeOrder.println(totOrder);
         takeOrder.flush();
+
+        // gets the order once ready
+        totOrder.append(eatOrder.readLine());
 
         // eats the order
         System.out.println("(Cliente) Mangio " + totOrder);
@@ -195,7 +202,6 @@ public class Customer {
     public float checkOrder(String order) {
 
         float price;
-        float bill = 0;
 
         // opens the file that contains the menu in read mode
         try (FileReader fileReader = new FileReader("menu.txt")) {
@@ -208,8 +214,7 @@ public class Customer {
             while ((menuOrder = bufferedReader.readLine()) != null){
                 price = Float.parseFloat(bufferedReader.readLine().trim());
                 if (menuOrder.equals(order)) {
-                    bill += price;
-                    return bill;
+                    return price;
                 }
             }
 
