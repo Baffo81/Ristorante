@@ -170,7 +170,7 @@ public class Customer {
                 bill += checkOrder(order);
                 System.out.println("Ordine non presente nel menù, RIPROVARE? (S/N)");
             }else{
-                totOrder.append(order).append("\n");
+                totOrder.append(order);
                 System.out.println("Lista degli ordini:" + totOrder);
                 bill += checkOrder(order);
                 System.out.println("Prezzo tot:" + bill);
@@ -185,10 +185,10 @@ public class Customer {
         takeOrder.flush();
 
         // gets the order once ready
-        totOrder.append(eatOrder.readLine());
+        //totOrder.append(eatOrder.readLine());
 
         // eats the order
-        System.out.println("(Cliente) Mangio " + totOrder);
+        System.out.println("(Cliente) Mangio " + eatOrder.readLine());
         try {
             Thread.sleep(1000);
         } catch (InterruptedException exc) {
