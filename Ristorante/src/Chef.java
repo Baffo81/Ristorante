@@ -5,21 +5,30 @@ import java.util.Scanner;
 
 public class Chef {
     public static void main(String[] args) {
-
-        // used for communication with waiters
-        final int PORT = 1315;
+        final int PORT = 1315;              // used for communication with waiters
+        Socket acceptedOrder;               // used to accept an order
+        BufferedReader takeOrder;           // used to receive request of preparing an order by waiters
+        PrintWriter sendOrder;              // used to send a ready order to a waiter
+        String order;                       // requested order by a waiter
 
         // writes the menù
         writeMenu();
 
         // creates a server socket with the specified port to communicate with waiters
-        try (ServerSocket chefSocket = new ServerSocket(PORT)) {
-
+        try (ServerSocket serverSocket = new ServerSocket(PORT)) {
             // keeps cooking clients' orders and sending them to waiters
             while (true) {
+                // waits for an order request by a waiter
+                System.out.println("(Cuoco) Attendo un ordine");
+                acceptedOrder = serverSocket.accept();
 
                 // reads an order, prepares it and sends it back to the waiter
-                prepareOrder(chefSocket);
+                takeOrder = new BufferedReader(new InputStreamReader(acceptedOrder.getInputStream()));
+                sendOrder = new PrintWriter(acceptedOrder.getOutputStream());
+                order = takeOrder.readLine();
+                prepareOrder(order);
+                sendOrder.println(order);
+                acceptedOrder.close();
             }
         }
         catch (IOException exc) {
@@ -29,7 +38,6 @@ public class Chef {
     }
 
     public static void writeMenu() {
-
         // tries to open the file in read mode
         try (FileWriter menuWriter = new FileWriter("menu.txt")) {
             String order,                                       // order's name
@@ -38,17 +46,16 @@ public class Chef {
             Scanner scanner = new Scanner(System.in);           // object to read from the stdin
             PrintWriter writer = new PrintWriter(menuWriter);   // object to write into the file
 
-            // writes the menu
+            // the chef writes the menu
             do {
-
-                // writes customer's order
+                // reads order's name
                 do {
                     System.out.println("Quale ordine desideri scrivere nel menù?");
                     order = scanner.nextLine();
                 }
                 while(order.isEmpty());
 
-                // writes order's price
+                // reads order's price
                 do {
                     System.out.println("Inserisci il prezzo dell'ordine");
                     price = Float.parseFloat(scanner.next());
@@ -72,21 +79,8 @@ public class Chef {
         }
     }
 
-    //simulates the preparation of an order by the chef
-    public static void prepareOrder(ServerSocket chefSocket) throws IOException {
-
-        // waits for an order request by a waiter
-        System.out.println("(Cuoco) Attendo un ordine");
-        Socket acceptedOrder = chefSocket.accept();
-
-        // used to get an order by a waiter and to send it back to him
-        BufferedReader takeOrder = new BufferedReader(new InputStreamReader(acceptedOrder.getInputStream()));
-        PrintWriter sendOrder = new PrintWriter(acceptedOrder.getOutputStream());
-
-        // reads an order
-        String order = takeOrder.readLine();
-
-        // prepares the order
+    //simulates the preparation of a order by the chef
+    public static void prepareOrder(String order) {
         System.out.println("(Cuoco) Preparo: " + order);
         try {
             Thread.sleep(3000);
@@ -95,13 +89,6 @@ public class Chef {
             System.out.println("(Cuoco) Errore utilizzo sleep");
             throw new RuntimeException(exc);
         }
-
-        // sends the order to a waiter
         System.out.println("(Cuoco) Ordine pronto e consegnato al cameriere");
-        sendOrder.println(order);
-        sendOrder.flush();
-
-        // closes the communication
-        acceptedOrder.close();
     }
 }
