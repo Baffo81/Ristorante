@@ -10,10 +10,9 @@ public class Customer {
     public void run() {
 
         final int PORT_TO_RECEPTION = 1313,    // used for the communication with the receptionist
-                  PORT_TO_WAITER    = 1316;    // used for the communication with waiters
+                PORT_TO_WAITER    = 1316;    // used for the communication with waiters
         int tableNumber,                       // number of customer's table
-            waitingTime;                       // time the customer has to wait to enter
-        Float bill;                            // customer's bill
+                waitingTime;                       // time the customer has to wait to enter
         String answerWaitingTime;              // used to check if the user wants waiting
 
         // tries to create a socket with specified server's address and port's number to communicate with the waiter
@@ -151,36 +150,52 @@ public class Customer {
         BufferedReader eatOrder = new BufferedReader(new InputStreamReader(waiterSocket.getInputStream()));
         PrintWriter takeOrder = new PrintWriter(waiterSocket.getOutputStream(), true);
 
-        // customer's order
-        String order;
+        StringBuilder totOrder = new StringBuilder();
+        String order,
+               status;
+        float  bill;
 
-        // gets customer's order
         do {
-            System.out.println("Scegli un ordine da effettuare");
-            scanner.nextLine();
-            order = scanner.nextLine();
-        } while (!checkOrder(order));
 
-        // sends the order to a waiter
-        takeOrder.println(order);
-        takeOrder.flush();
+            // gets customer's order
+            do {
+                System.out.println("Scegli un ordine da effettuare");
+                scanner.nextLine();
+                order = scanner.nextLine();
+            } while (checkOrder(order) < 0);
+
+            totOrder.append(order);
+            bill = checkOrder(order);
+
+            System.out.println("Desideri continuare ad ordiare? (S/N)");
+            status = scanner.next();
+            scanner.nextLine();
+        }
+        while (status.equalsIgnoreCase("s"));
 
         // gets the order once ready
-        order = eatOrder.readLine();
+        totOrder.append(eatOrder.readLine());
+
+        // sends the order to a waiter
+        takeOrder.println(totOrder);
+        takeOrder.flush();
 
         // eats the order
-        System.out.println("(Cliente) Mangio " + order);
+        System.out.println("(Cliente) Mangio " + totOrder);
         try {
             Thread.sleep(1000);
-        }
-        catch(InterruptedException exc) {
+        } catch (InterruptedException exc) {
             System.out.println("(Cliente) Errore utilizzo sleep");
             throw new RuntimeException(exc);
         }
+        System.out.println("(Cliente) Pago " + bill + '€');
     }
 
     // checks if customer's requested order is in the menù and returns true if the order is available and false otherwise
-    public boolean checkOrder(String order) {
+    public float checkOrder(String order) {
+
+        float price;
+        float bill = 0;
 
         // opens the file that contains the menu in read mode
         try (FileReader fileReader = new FileReader("menu.txt")) {
@@ -190,13 +205,17 @@ public class Customer {
             String menuOrder;
 
             // reads each order stored into the menu while it finds the customer's requested one or until it realizes that it isn't available
-            while ((menuOrder = bufferedReader.readLine()) != null)
-                if (menuOrder.equals(order))
-                    return true;
+            while ((menuOrder = bufferedReader.readLine()) != null){
+                price = Float.parseFloat(bufferedReader.readLine().trim());
+                if (menuOrder.equals(order)) {
+                    bill += price;
+                    return bill;
+                }
+            }
 
             // closes the connection to the file
             bufferedReader.close();
-            return false;
+            return -1;
         }
         catch (Exception exc) {
             System.out.println("(Cliente) Errore apertura menù");
@@ -205,7 +224,7 @@ public class Customer {
     }
 
     public static void main(String[] args) {
-            Customer customer = new Customer();
-            customer.run();
+        Customer customer = new Customer();
+        customer.run();
     }
 }
