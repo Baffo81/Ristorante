@@ -72,7 +72,7 @@ public class Chef {
         }
     }
 
-    //simulates the preparation of a order by the chef
+    //simulates the preparation of an order by the chef
     public static void prepareOrder(ServerSocket chefSocket) throws IOException {
 
         // waits for an order request by a waiter

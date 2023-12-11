@@ -39,14 +39,8 @@ public class Waiter {
                             PrintWriter sendReadyOrderToCustomer = new PrintWriter(acceptedCustomer.getOutputStream());
 
                             // gets a customer's order, sends it to the chef to prepare it, gets it ready from the chef and sends it back to the customer
-                            String order;
-                            order = readOrderFromCustomer.readLine();
-                            System.out.println("(Cameriere) Il cliente ordina " + order + ", mando l'ordine allo chef per prepararlo e attendo");
-                            sendOrderToChef.println(order);
-                            sendOrderToChef.flush();
-                            order = readReadyOrderFromChef.readLine();
-                            sendReadyOrderToCustomer.println(order);
-                            sendReadyOrderToCustomer.flush();
+                            readOrder(readOrderFromCustomer, sendOrderToChef, readReadyOrderFromChef, sendReadyOrderToCustomer);
+
                         } catch (IOException exc) {
                             System.out.println("(Cameriere) Impossibile gestire l'ordine del cliente");
                             throw new RuntimeException(exc);
@@ -67,5 +61,22 @@ public class Waiter {
             System.out.println("(Cameriere) Impossibile comunicare con il cliente");
             throw new RuntimeException(exc);
         }
+    }
+
+    public static void readOrder(BufferedReader readOrderFromCustomer, PrintWriter sendOrderToChef, BufferedReader readReadyOrderFromChef, PrintWriter sendReadyOrderToCustomer) throws IOException {
+        String order;
+        order = readOrderFromCustomer.readLine();
+        System.out.println("(Cameriere) Il cliente ordina " + order + ", mando l'ordine allo chef per prepararlo e attendo");
+        sendOrderToChef.println(order);
+        sendOrderToChef.flush();
+        order = readReadyOrderFromChef.readLine();
+
+        // take order form Chef and gives it to Costumer
+        sendOrder(sendReadyOrderToCustomer, order);
+    }
+
+    public static void sendOrder(PrintWriter sendReadyOrderToCustomer, String order){
+        sendReadyOrderToCustomer.println(order);
+        sendReadyOrderToCustomer.flush();
     }
 }
