@@ -10,7 +10,7 @@ public class Customer {
     public void run() {
 
         final int PORT_TO_RECEPTION = 1313,    // used for the communication with the receptionist
-                  PORT_TO_WAITER    = 1316;    // used for the communication with waiters
+                PORT_TO_WAITER    = 1316;    // used for the communication with waiters
         int tableNumber,                       // number of customer's table
                 waitingTime;                   // time the customer has to wait to enter
         String answerWaitingTime;              // used to check if the user wants waiting
@@ -162,9 +162,11 @@ public class Customer {
             order = scanner.nextLine().trim();
 
             // if the customer stops eating
-            if (order.equalsIgnoreCase("fine"))
+            if (order.equalsIgnoreCase("fine")) {
+                takeOrder.println("Cliente Andato");
+                takeOrder.flush();
                 break;
-
+            }
             // if the requested order isn't in the menù
             if(checkOrder(order) < 0) {
                 bill += checkOrder(order);
