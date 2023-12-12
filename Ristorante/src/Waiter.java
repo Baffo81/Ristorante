@@ -10,24 +10,16 @@ public class Waiter {
     }
 
     public void waiter() {
+        final int PORT_TO_CUSTOMER = 1316,
+                PORT_TO_CHEF = 1315;
 
-
-        final int PORT_TO_CUSTOMER = 1316,      // used for the communication with customers
-                  PORT_TO_CHEF = 1315;          // used for the communication with the chef
-
-        // creates a socket to communicate with customers
         try (ServerSocket serverSocket = new ServerSocket(PORT_TO_CUSTOMER)) {
-
-            // creates a socket to communicate with the chef
             try (Socket chefSocket = new Socket(InetAddress.getLocalHost(), PORT_TO_CHEF)) {
-
                 while (true) {
-
-                    // waits for an order by a customer
                     System.out.println("(Cameriere) Attendo l'ordine del cliente");
                     Socket acceptedCustomer = serverSocket.accept();
 
-                    // creates a new thread to manage a request
+                    // crea un nuovo thread per gestire una richiesta
                     new Thread(() -> handleCustomer(acceptedCustomer, chefSocket)).start();
                 }
             } catch (IOException exc) {
@@ -40,57 +32,55 @@ public class Waiter {
         }
     }
 
+    public static void handleCustomer(Socket customerSocket, Socket chefSocket) {
+        try (
+                BufferedReader readOrderFromCustomer = new BufferedReader(new InputStreamReader(customerSocket.getInputStream()));
+                PrintWriter sendOrderToChef = new PrintWriter(chefSocket.getOutputStream());
+                BufferedReader readReadyOrderFromChef = new BufferedReader(new InputStreamReader(chefSocket.getInputStream()));
+                PrintWriter sendReadyOrderToCustomer = new PrintWriter(customerSocket.getOutputStream(), true)
+        ) {
+            readOrder(readOrderFromCustomer, sendOrderToChef, readReadyOrderFromChef, sendReadyOrderToCustomer);
+        } catch (IOException exc) {
+            System.out.println("(Cameriere) Impossibile gestire l'ordine del cliente");
+            // Puoi gestire la situazione in cui il socket è chiuso qui
+        } finally {
+            try {
+                // Chiudi il socket del cliente solo dopo aver gestito l'ordine
+                customerSocket.close();
+            } catch (IOException exc) {
+                System.out.println("(Cameriere) Impossibile chiudere la comunicazione con il cliente");
+                exc.printStackTrace();
+            }
+        }
+    }
+
     public static void readOrder(BufferedReader readOrderFromCustomer, PrintWriter sendOrderToChef, BufferedReader readReadyOrderFromChef, PrintWriter sendReadyOrderToCustomer) throws IOException {
         String order;
         order = readOrderFromCustomer.readLine();
         System.out.println("(Cameriere) Il cliente ordina " + order + ", mando l'ordine allo chef per prepararlo e attendo");
         sendOrderToChef.println(order);
         sendOrderToChef.flush();
-        order = readReadyOrderFromChef.readLine();
-
-        // take order form Chef and gives it to Costumer
-        sendOrder(sendReadyOrderToCustomer, order);
+        String confirmation = readReadyOrderFromChef.readLine();
+        if (confirmation != null && confirmation.equals("Pronto")) {
+            System.out.println("(Cameriere) Ricevuta conferma dal cuoco. I piatti sono pronti.");
+            sendOrder(sendReadyOrderToCustomer, order);
+        } else {
+            System.out.println("(Cameriere) Il cuoco non ha confermato la preparazione dell'ordine.");
+        }
+        try {
+            readOrderFromCustomer.close();
+            sendOrderToChef.close();
+            readReadyOrderFromChef.close();
+            sendReadyOrderToCustomer.close();
+        } catch (IOException e) {
+            System.out.println("(Cameriere) Impossibile chiudere la comunicazione con il cliente");
+            throw new RuntimeException(e);
+        }
     }
 
-    public static void sendOrder(PrintWriter sendReadyOrderToCustomer, String order){
-        System.out.println("(Cameriere) i piatti:" + order + "sono pronti");
+    public static void sendOrder(PrintWriter sendReadyOrderToCustomer, String order) {
+        System.out.println("(Cameriere) I piatti: " + order + " sono pronti");
         sendReadyOrderToCustomer.println(order);
         sendReadyOrderToCustomer.flush();
-    }
-
-
-
-    private void handleCustomer(Socket customerSocket, Socket chefSocket) {
-        try (
-                BufferedReader readOrderFromCustomer = new BufferedReader(new InputStreamReader(customerSocket.getInputStream()));
-                PrintWriter sendOrderToChef = new PrintWriter(chefSocket.getOutputStream());
-                BufferedReader readReadyOrderFromChef = new BufferedReader(new InputStreamReader(chefSocket.getInputStream()));
-                PrintWriter sendReadyOrderToCustomer = new PrintWriter(customerSocket.getOutputStream(), true);
-        ) {
-            String order = readOrderFromCustomer.readLine();
-            System.out.println("(Cameriere) Il cliente ordina " + order + ", mando l'ordine allo chef per prepararlo e attendo");
-
-            // Invia l'ordine allo chef
-            sendOrderToChef.println(order);
-            sendOrderToChef.flush();
-
-            // Attendi che lo chef prepari l'ordine
-            String readyOrder = readReadyOrderFromChef.readLine();
-
-            // Invia l'ordine pronto al cliente
-            System.out.println("(Cameriere) I piatti sono pronti. Li invio al cliente.");
-            sendReadyOrderToCustomer.println(readyOrder);
-            sendReadyOrderToCustomer.flush();
-
-        } catch (IOException exc) {
-            System.out.println("(Cameriere) Impossibile gestire l'ordine del cliente");
-            throw new RuntimeException(exc);
-        } finally {
-            try {
-                customerSocket.close();
-            } catch (IOException exc) {
-                System.out.println("(Cameriere) Impossibile chiudere la comunicazione con il cliente");
-            }
-        }
     }
 }
