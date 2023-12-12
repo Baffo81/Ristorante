@@ -8,7 +8,6 @@ import java.util.Random;
 import java.util.concurrent.*;
 
 public class Receptionist {
-
     final static int PORT = 1313,                                                                   // used for the communication with customers
                      MAX_TABLES = 20;                                                               // number of restaurant's tables
     static Random rand = new Random();                                                              // used to generate random numbers
@@ -62,8 +61,7 @@ public class Receptionist {
                     }
                 }
             }
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
