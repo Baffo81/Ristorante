@@ -22,14 +22,9 @@ public class Chef {
                 System.out.println("(Cuoco) Attendo ordini");
                 acceptedOrder = serverSocket.accept();
 
-                // gets the order to prepare by the waiter
-                order = getOrder(acceptedOrder);
-
-                // prepares the order
-                prepareOrder(order);
-
-                // gives back the order to the waiter
-                giveOrder(acceptedOrder, order);
+                // creates a new thread to manage a request
+                Thread chef = new Thread( new chefHandler(acceptedOrder));
+                chef.start();
             }
         }
         catch (IOException exc) {
@@ -104,4 +99,39 @@ public class Chef {
         sendOrder.println(order);
         sendOrder.flush();
     }
+
+
+     static class chefHandler implements Runnable{
+
+        protected final Socket accepted;
+
+        //contructor
+         public chefHandler(Socket accepted){
+             this.accepted = accepted;
+         }
+
+         public void run() {
+
+             // gets the order to prepare by the waiter
+             String order = null;
+             while (true) {
+                 try {
+                     order = getOrder(accepted);
+                     if(order.equalsIgnoreCase("fine"))
+                         break;
+                 } catch (IOException e) {
+                     throw new RuntimeException(e);
+                 }
+                 // prepares the order
+                 prepareOrder(order);
+                 try {
+                     // gives back the order to the waiter
+                     giveOrder(accepted, order);
+                 } catch (IOException e) {
+                     throw new RuntimeException(e);
+                 }
+
+             }
+         }
+     }
 }
