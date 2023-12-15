@@ -9,7 +9,7 @@ public class Customer {
 
     public void run() {
         final int PORT_TO_RECEPTION = 1313,    // used for the communication with the receptionist
-                PORT_TO_WAITER    = 1316;    // used for the communication with waiters
+                  PORT_TO_WAITER    = 1316;    // used for the communication with waiters
         int tableNumber,                       // number of customer's table
                 waitingTime;                   // time the customer has to wait to enter
         String answerWaitingTime;              // used to check if the user wants waiting
@@ -120,7 +120,7 @@ public class Customer {
     public void getMenu() {
 
         // opens the files that contains the menu in read mode
-        try (FileReader fileReader = new FileReader("Macintosh:\\utenti\\gaetanoromeo\\Documenti\\Ristorante")) {
+        try (FileReader fileReader = new FileReader("menu.txt")) {
 
             // used to get each order and its price
             BufferedReader bufferedReader = new BufferedReader(fileReader);
