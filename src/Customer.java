@@ -29,15 +29,14 @@ public class Customer {
                 receptionSocket.close();
 
                 // creates a socket to take orders
-                try (Socket waiterSocket = new Socket(InetAddress.getLocalHost(), PORT_TO_WAITER)){
+                try (Socket waiterSocket = new Socket(InetAddress.getLocalHost(), PORT_TO_WAITER)) {
 
                     // shows the menu
                     getMenu();
 
                     // orders, waits for the order and eats it
                     getOrder(waiterSocket);
-                }
-                catch (IOException exc) {
+                } catch (IOException exc) {
                     System.out.println("(Cliente) Impossibile comunicare con il cameriere");
                     throw new RuntimeException(exc);
                 }
@@ -66,16 +65,12 @@ public class Customer {
 
                         // waits for the task to complete (the estimated wait time)
                         try {
-                            waitTask.get(); // restituisce la fine della task (è bloccante)
-                        }
-                        catch (InterruptedException | ExecutionException exc) {
+                            waitTask.get();
+                        } catch (InterruptedException | ExecutionException exc) {
                             System.out.println("(Cliente) Errore utilizzo scheduler");
                             throw new RuntimeException(exc);
-                        }
-
-                        // deallocates used resources
-                        finally {
-                            scheduler.shutdown(); // rilascio le risorse
+                        } finally {
+                            scheduler.shutdown(); // deallocates used resources
                         }
                     }
                     else {
@@ -83,8 +78,7 @@ public class Customer {
                     }
                 }
             }
-        }
-        catch (IOException exc) {
+        } catch (IOException exc) {
             System.out.println("(Cliente) Impossibile comunicare con il receptionist");
             throw new RuntimeException(exc);
         }
