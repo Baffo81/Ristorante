@@ -12,8 +12,11 @@ public class Customer {
                 waitingTime;                   // time the customer has to wait to enter
         String answerWaitingTime;              // used to check if the user wants waiting
 
+        Socket receptionSocket;
+        Socket waiterSocket = null;
         // tries to create a socket with specified server's address and port's number to communicate with the waiter
-        try (Socket receptionSocket = new Socket(InetAddress.getLocalHost(), PORT_TO_RECEPTION)) {
+        try {
+            receptionSocket = new Socket(InetAddress.getLocalHost(), PORT_TO_RECEPTION);
 
             // says how many seats he needs to the receptionist and gets a table
             tableNumber = getTable(receptionSocket);
@@ -27,13 +30,15 @@ public class Customer {
                 receptionSocket.close();
 
                 // creates a socket to take orders
-                try (Socket waiterSocket = new Socket(InetAddress.getLocalHost(), PORT_TO_WAITER)) {
+                try {
+                     waiterSocket = new Socket(InetAddress.getLocalHost(), PORT_TO_WAITER);
 
                     // shows the menu
                     getMenu();
 
                     // orders, waits for the order and eats it
                     getOrder(waiterSocket);
+
                 } catch (IOException exc) {
                     System.out.println("(Cliente) Impossibile comunicare con il cameriere");
                     throw new RuntimeException(exc);
@@ -87,6 +92,17 @@ public class Customer {
         } catch (IOException exc) {
             System.out.println("(Cliente) Impossibile comunicare con il receptionist");
             throw new RuntimeException(exc);
+        }finally {
+            // chiudi il socket solo alla fine del processo del cliente
+            if (waiterSocket != null && !waiterSocket.isClosed()) {
+                try {
+                    waiterSocket.close();
+                } catch (IOException e) {
+                    System.out.println("(Cliente) Errore durante la chiusura del socket del cameriere");
+                    throw new RuntimeException(e);
+                    // o gestisci l'eccezione in modo appropriato
+                }
+            }
         }
     }
 
@@ -201,9 +217,7 @@ public class Customer {
 
         // closes used resources
         stdin.close();
-        takeOrder.close();
-        eatOrder.close();
-        waiterSocket.close();
+
     }
 
     // checks if customer's requested order is in the menù and returns true if the order is available and false otherwise

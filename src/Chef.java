@@ -72,9 +72,7 @@ public class Chef {
     // gets an order to prepare by a waiter
     public static String getOrder(Socket acceptedOrder) throws IOException {
         BufferedReader takeOrder = new BufferedReader(new InputStreamReader(acceptedOrder.getInputStream()));
-        String order = takeOrder.readLine();
-        takeOrder.close();
-        return order;
+        return takeOrder.readLine();
     }
 
     // simulates the preparation of an order by the chef
@@ -94,7 +92,7 @@ public class Chef {
         PrintWriter sendOrder = new PrintWriter(acceptedOrder.getOutputStream(), true);
         System.out.println("(Cuoco) Invio " + order + " al cameriere");
         sendOrder.println(order);
-        sendOrder.close();
+
     }
 
     record ChefHandler(Socket accepted) implements Runnable {
