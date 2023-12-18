@@ -8,61 +8,71 @@ import java.util.Random;
 import java.util.concurrent.*;
 
 public class Receptionist {
-    final static int MAX_TABLES = 20;                                                               // number of restaurant's tables
-    static Random rand = new Random();                                                              // used to generate random numbers
-    static int availableSeats = 100,                                                                // number of available seats for customers
-            availableTables = 20,                                                                // number of available tables for customers
-            requiredSeats,                                                                       // number of customer's required seats
-            tableNumber;                                                                         // customer's table number
-    static int [] tables = new int[MAX_TABLES];                                                     // 0 in a cell means free table, 1 means occupied table
-    static BufferedReader readSeatsNumber;                                                          // used to read customer requested seats
-    static PrintWriter giveTableNumber;                                                             // used to assign a table to the customer
-    public static void main(String [] args) {
-        final int PORT = 1313;                                                                      // used for the communication with customers
+    final static int MAX_TABLES = 20;                    // number of restaurant's tables
+    final static Object lock = new Object();             // lock to synchronize the access to the receptionist by many customers
+    static Random rand = new Random();                   // used to generate random numbers
+    static int availableSeats = 100,                     // number of available seats for customers
+            availableTables = 20,                        // number of available tables for customers
+            requiredSeats,                               // number of customer's required seats
+            tableNumber;                                 // customer's table number
+    static int [] tables = new int[MAX_TABLES];          // 0 in a cell means free table, 1 means occupied table
+    static BufferedReader readSeatsNumber;               // used to read customer requested seats
+    static PrintWriter giveTableNumber;                  // used to assign a table to the customer
+    public static void main(String [] args) throws IOException {
+        final int PORT = 1313;                           // used for the communication with customers
 
         // creates a socket to communicate with customers
         try (ServerSocket receptionSocket = new ServerSocket(PORT)) {
-            while (true) {
+            do {
 
                 // waits for a customer
                 System.out.println("(Reception) Attendo clienti");
                 Socket acceptedClient = receptionSocket.accept();
 
-                // reads customer's required seats
-                readSeatsNumber = new BufferedReader(new InputStreamReader(acceptedClient.getInputStream()));
-                giveTableNumber = new PrintWriter(acceptedClient.getOutputStream(), true);
-                requiredSeats = Integer.parseInt(readSeatsNumber.readLine());
+                // synchronizes the access to the receptionist by many customers
+                synchronized (lock) {
 
-                // checks if there are enough available tables and seats
-                if (availableTables > 0 && availableSeats >= requiredSeats) {
+                    // reads customer's required seats
+                    readSeatsNumber = new BufferedReader(new InputStreamReader(acceptedClient.getInputStream()));
+                    giveTableNumber = new PrintWriter(acceptedClient.getOutputStream(), true);
+                    requiredSeats = Integer.parseInt(readSeatsNumber.readLine());
 
-                    // assigns a table to the customer and updates number of available tables and seats
-                    assignTable();
+                    // checks if there are enough available tables and seats
+                    if (availableTables > 0 && availableSeats >= requiredSeats) {
 
-                    // creates a scheduler to plan the periodic releasing of tables
-                    ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
-                    scheduler.schedule(() -> releaseTable(requiredSeats, tableNumber), 5, TimeUnit.SECONDS);
-                }
-                else {
-                    System.out.println("(Receptionist) Non ci sono abbastanza posti");
-                    giveTableNumber.println(-1);
+                        // assigns a table to the customer and updates number of available tables and seats
+                        assignTable();
+                        acceptedClient.close();
 
-                    // creare una seconda connessione per comunicare il tempo di attesa
-                    try (Socket waitingTimeSocket = receptionSocket.accept()) {
-                        PrintWriter waitingTimeWriter = new PrintWriter(waitingTimeSocket.getOutputStream(), true);
-                        int waitingTime = randomWaitingTime();
-                        System.out.println("(Receptionist) Il tempo finché un tavolo si liberi è " + waitingTime + " minuti");
-                        waitingTimeWriter.println(waitingTime);
-                        waitingTimeWriter.flush();
+                        // creates a scheduler to plan the periodic releasing of tables
+                        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+                        scheduler.schedule(() -> releaseTable(requiredSeats, tableNumber), 5, TimeUnit.SECONDS);
+                    } else {
+                        System.out.println("(Receptionist) Non ci sono abbastanza posti");
+                        giveTableNumber.println(-1);
+                        acceptedClient.close();
+
+                        // creare una seconda connessione per comunicare il tempo di attesa
+                        try (Socket waitingTimeSocket = receptionSocket.accept()) {
+                            PrintWriter waitingTimeWriter = new PrintWriter(waitingTimeSocket.getOutputStream(), true);
+                            int waitingTime = randomWaitingTime();
+                            System.out.println("(Receptionist) Il tempo finché un tavolo si liberi è " + waitingTime + " minuti");
+                            waitingTimeWriter.println(waitingTime);
+                        } catch (IOException exc) {
+                            System.out.println("(Receptionist) Impossibile comunicare con il cliente");
+                            throw new RuntimeException(exc);
+                        }
                     }
-                    catch (IOException exc) {
-                        System.out.println("(Receptionist) Impossibile comunicare con il cliente");
-                        throw new RuntimeException(exc);
-                    }
                 }
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+            } while (true);
+        } catch (IOException exc) {
+            System.out.println("(Receptionist) Impossibile comunicare con i clienti");
+            throw new RuntimeException(exc);
+        } finally {
+
+            // closes used resources
+            readSeatsNumber.close();
+            giveTableNumber.close();
         }
     }
 
@@ -89,7 +99,6 @@ public class Receptionist {
 
         // sends the table number to che customer
         giveTableNumber.println(tableNumber);
-        giveTableNumber.flush();
         System.out.println("(Receptionist) Il cliente prende posto, numero di posti e tavoli disponibili: " + availableSeats + " " + availableTables);
     }
 

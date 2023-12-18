@@ -1,11 +1,9 @@
 import java.io.*;
 import java.net.InetAddress;
 import java.net.Socket;
-import java.util.Scanner;
 import java.util.concurrent.*;
 
 public class Customer {
-    final Scanner scanner = new Scanner(System.in);
 
     public void run() {
         final int PORT_TO_RECEPTION = 1313,    // used for the communication with the receptionist
@@ -46,14 +44,17 @@ public class Customer {
             else {
                 try (Socket receptionSocket2 = new Socket(InetAddress.getLocalHost(), PORT_TO_RECEPTION)) {
 
-                    // objects for reading and writing through the socket
+                    // used to read through the socket
                     BufferedReader checkSeats2 = new BufferedReader(new InputStreamReader(receptionSocket2.getInputStream()));
+
+                    // used to read through the standard input
+                    BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
 
                     // decides if waiting or not
                     waitingTime = Integer.parseInt(checkSeats2.readLine());
 
                     System.out.println("(Reception) Vuoi attendere " + waitingTime + " minuti ?");
-                    answerWaitingTime = scanner.next();
+                    answerWaitingTime = stdin.readLine();
 
                     if (answerWaitingTime.equalsIgnoreCase("si")) {
 
@@ -70,7 +71,12 @@ public class Customer {
                             System.out.println("(Cliente) Errore utilizzo scheduler");
                             throw new RuntimeException(exc);
                         } finally {
-                            scheduler.shutdown(); // deallocates used resources
+
+                            // deallocates used resources
+                            scheduler.shutdown();
+                            checkSeats2.close();
+                            stdin.close();
+                            stdin.close();
                         }
                     }
                     else {
@@ -94,18 +100,22 @@ public class Customer {
 
         // used to gets customer's required seats and to say it to the receptionist
         BufferedReader checkSeats = new BufferedReader(new InputStreamReader(receptionSocket.getInputStream()));
+        BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
         PrintWriter sendSeats = new PrintWriter(receptionSocket.getOutputStream(), true);
 
         // reads customer requested seats
         System.out.println("Benvenuto, di quanti posti hai bisogno?");
-        int requiredSeats = scanner.nextInt();
+        int requiredSeats = Integer.parseInt(stdin.readLine());
 
         // says how many seats he requires to the receptionist
         sendSeats.println(requiredSeats);
-        sendSeats.flush();
 
         // gets the table number by the receptionist if it's possible
         int tableNumber = Integer.parseInt(checkSeats.readLine());
+
+        // closes used resources
+        checkSeats.close();
+        sendSeats.close();
         receptionSocket.close();
         return tableNumber;
     }
@@ -141,9 +151,9 @@ public class Customer {
     public void getOrder(Socket waiterSocket) throws IOException {
 
         // used to get a customer's order and to send it to a waiter
+        BufferedReader stdin = new BufferedReader(new InputStreamReader(System.in));
         BufferedReader eatOrder = new BufferedReader(new InputStreamReader(waiterSocket.getInputStream()));
         PrintWriter takeOrder = new PrintWriter(waiterSocket.getOutputStream(), true);
-        Scanner scanner = new Scanner(System.in);
 
         StringBuilder totalOrdered = new StringBuilder();
         String order;
@@ -153,12 +163,11 @@ public class Customer {
 
             // gets customer's order
             System.out.println("Scegli un ordine da effettuare oppure digita 'fine' per chiedere il conto");
-            order = scanner.nextLine();
+            order = stdin.readLine();
 
             // if the customer stops eating
             if (order.equalsIgnoreCase("fine")) {
                 takeOrder.println("fine");
-                takeOrder.flush();
                 break;
             }
             // if the requested order isn't in the menù
@@ -169,7 +178,6 @@ public class Customer {
                 // sends the order to the waiter
                 System.out.println("(Cliente) Attendo che " + order + " sia pronto");
                 takeOrder.println(order);
-                takeOrder.flush();
 
                 // waits for the order and eats it
                 order = eatOrder.readLine();
@@ -186,13 +194,15 @@ public class Customer {
                     throw new RuntimeException(exc);
                 }
             }
-        }
-        while (true);
-
-        scanner.close();
+        } while (true);
 
         System.out.println("Lista degli ordini: " + "\n" + totalOrdered);
         System.out.println("(Cliente) Conto: " + bill + '€');
+
+        // closes used resources
+        stdin.close();
+        takeOrder.close();
+        eatOrder.close();
         waiterSocket.close();
     }
 
@@ -210,15 +220,15 @@ public class Customer {
             // reads each order stored into the menu while it finds the customer's requested one or until it realizes that it isn't available
             while ((menuOrder = bufferedReader.readLine()) != null){
                 price = Float.parseFloat(bufferedReader.readLine());
-                if (menuOrder.equals(order))
+                if (menuOrder.equals(order)) {
                     return price;
+                }
             }
 
             // closes the connection to the file
             bufferedReader.close();
             return -1;
-        }
-        catch (Exception exc) {
+        } catch (Exception exc) {
             System.out.println("(Cliente) Errore apertura menù");
             throw new RuntimeException(exc);
         }
