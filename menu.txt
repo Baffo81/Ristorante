@@ -1,2 +1,2 @@
-prosciutto
-6.0
+pasta
+8.0
